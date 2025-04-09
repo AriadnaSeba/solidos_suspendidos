@@ -1,0 +1,120 @@
+---
+title: "Mi sitio"
+format: 
+  html:
+    number-sections: true
+    toc: true
+    embed-resources: true
+    crossrefs-hover: false
+    lang: es
+    bibliography: bibliografia/bibliografia.bib
+    csl: bibliografia/ieee.csl
+date: last-modified
+author:
+  - name: Víctor Gauto
+    orcid: 0000-0001-9960-8558
+    corresponding: true
+    email: victor.gauto@ca.frre.utn.edu.ar
+    affiliations:
+      - name: GISTAQ (UTN-FRRe)
+        url: https://www.instagram.com/gistaq.utn/
+abstract: |
+  Este sitio web contiene cuestiones etc
+keywords:
+  - GISTAQ
+  - UTN
+  - FRRe
+  - Quarto
+---
+
+# Links útiles
+
+[Creación de HTML](https://quarto.org/docs/output-formats/html-basics.html)
+
+[Agregar tema a HTML](https://quarto.org/docs/output-formats/html-themes.html)
+
+[Uso de markdown](https://quarto.org/docs/authoring/markdown-basics.html)
+
+[Agregar figuras](https://quarto.org/docs/authoring/figures.html)
+
+[Agregar tablas](https://quarto.org/docs/authoring/tables.html)
+
+Ver @fig-logo.
+
+## Markdown
+
+Texto en **negrita**, *cursiva*, ~~tachado~~ y `código`.
+
+* Lista
+  - Ítem 1
+  - Ítem 2
+    + Subítem 1
+    + Subítem 2
+
+## Callout
+
+Ver @tbl-tabla.
+
+::: {.callout-warning}
+
+Advertencia.
+
+:::
+
+::: {.callout-note}
+
+[Bloques callout](https://quarto.org/docs/authoring/callouts.html).
+
+:::
+
+## Referencias cruzadas
+
+Según autores @Wang2023. Otro autor @Ferral2018.
+
+Ver @fig-logo.
+
+Ver @tbl-tabla.
+
+## LaTeX
+
+$$
+y = x + \frac{numerador}{denominador} + \int_{0}^{1} f(x) \, dx
+$$
+
+
+# Ejecución de código
+
+Se puede agregar scripts y ejecutarlos mostrando sus resultados.
+
+## Python
+
+```{python}
+import pandas as pd
+
+a = pd.DataFrame([1, 2, 3], index=["a", "b", "c"])
+
+print(a)
+```
+
+## R
+
+```{r}
+library(tibble)
+
+tibble(x = 1:3)
+```
+
+# Tabla
+
+| columna1 | columna2 | columna3 |
+|:-:|:--|--:|
+| a1 | b2 | c3 |
+| d4 | e5 | f6 |
+
+: Tabla con columnas {#tbl-tabla}
+
+[Crear mis propias tablas](https://www.tablesgenerator.com/markdown_tables).
+
+# Imagen
+
+![Logo del GISTAQ](img/logo-gistaq.png){width=40% #fig-logo}
