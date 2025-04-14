@@ -27,94 +27,89 @@ keywords:
   - Quarto
 ---
 
-# Links útiles
+## Sólidos suspendidos totales<span style="font-weight:normal; font-size: 1rem">, por Vera Geneyer [{{< fa brands github >}}](https://github.com/VeraGeneyer)</span> {toc-text="Sólidos suspendidos totales"}
 
-[Creación de HTML](https://quarto.org/docs/output-formats/html-basics.html)
+Los sólidos suspendidos totales (TSM): es la cantidad de materia en suspensión en el agua, que incluye plancton, minerales, arena, y microorganismos. Se determinan como el residuo no filtrable de una muestra de agua. Niveles altos (TSM) pueden reducir la transparencia del agua, limitar la luz y y transportar sustancias tóxicas, afectando la vida acuática y la calidad del agua.
+Este parámetro, medido mediante sensores remotos, nos da información sobre el estado físico del cuerpo de agua y están relacionados con factores como la humedad, temperatura y entre otros, que es vital para detectar riesgos al ecosistema y cumplir con las normas ambientales.
 
-[Agregar tema a HTML](https://quarto.org/docs/output-formats/html-themes.html)
+### Métodos tradicionales
 
-[Uso de markdown](https://quarto.org/docs/authoring/markdown-basics.html)
+:::: {.content-visible when-format="html"}
 
-[Agregar figuras](https://quarto.org/docs/authoring/figures.html)
+::: {.column-screen-right}
 
-[Agregar tablas](https://quarto.org/docs/authoring/tables.html)
+| Ecuación | Bandas (nm) | Métricas | Aguas | Plataforma | Referencia |
+|:-:|:--|:--|:--|:--|:-:|
+| $-229.34 \left( \frac{B03}{B08} \right)^{3}+1001.65 \left( \frac{B03}{B08} \right)^{2}-1422.7 \left( \frac{B03}{B08} \right)+665.17$ | B03, B08 | $R^{2}$ | Embalse^[Aguas lénticas.] | Landsat-8 | @Ramirez2017 |
+| $-244.83+40.21 \cdot B01-3.67 \cdot NDWI$ | B01, NDWI (B03, B08) | $R^{2}$, RMSE, d | Río^[d = prueba estadística de <b>Durbin-Watson</b>.] | GeoEye | @Gomez2014 |
 
-Ver @fig-logo.
-
-## Markdown
-
-Texto en **negrita**, *cursiva*, ~~tachado~~ y `código`.
-
-* Lista
-  - Ítem 1
-  - Ítem 2
-    + Subítem 1
-    + Subítem 2
-
-## Callout
-
-Ver @tbl-tabla.
-
-::: {.callout-warning}
-
-Advertencia.
+: Características principales de algoritmos tradicionales para la estimación de sólidos suspendidos. {#tbl-solsus-trad .striped .hover tbl-colwidths="[50,10,10,10,10]"}
 
 :::
 
-::: {.callout-note}
+::::
 
-[Bloques callout](https://quarto.org/docs/authoring/callouts.html).
+:::: {.content-visible when-format="typst"}
+
+| Ecuación | Referencia |
+|:--|:-:|
+| $-229.34 \left( \frac{B03}{B08} \right)^{3}+1001.65 \left( \frac{B03}{B08} \right)^{2}-1422.7 \left( \frac{B03}{B08} \right)+665.17$ | [@Ramirez2017] |
+| $-244.83+40.21 \cdot B01-3.67 \cdot NDWI$ | [@Gomez2014] |
+
+: Características principales de algoritmos tradicionales para la estimación de sólidos suspendidos. {#tbl-solsus-trad .striped .hover tbl-colwidths="[80,20]"}
+
+::: {.block stroke='rgb("#B86092")' inset="8pt" radius="4pt"}
+
+[Ver tabla completa en la versión online &#x2197;](https://vhgauto.quarto.pub/gistaq-parana/#tbl-solsus-trad)
 
 :::
 
-## Referencias cruzadas
+::::
 
-Según autores @Wang2023. Otro autor @Ferral2018.
+De acuerdo a un estudio que analizó 48 cuerpos de agua, la estimación de TSM se hizo en su mayoría por modelos lineales, siendo la banda B8A la más frecuente [@Cruz2023].
 
-Ver @fig-logo.
+### Métodos de aprendizaje automático
 
-Ver @tbl-tabla.
+El **aprendizaje automático (ML)**  es una rama de la inteligencia artificial cuyo objetivo es desarrollar algoritmos capaces de resolver problemas mediante el análisis de datos y la creación de funciones que describen el comportamiento de fenómenos monitoreados [@Carpio2021]. Los modelos de aprendizaje automático más utilizados y mencionados por los investigadores para predecir la concentración de SST son:
 
-## LaTeX
+* **Bosque Aleatorio (RF) y Refuerzo Adaptativo (AdB)**, modelos que se destacan por su robustez ante datos complejos y ruidosos. Estos algoritmos construyen múltiples árboles de decisión que analizan las relaciones entre características como el uso del suelo o el volumen de escorrentía y los niveles de SST [@Moeini2021].
 
-$$
-y = x + \frac{numerador}{denominador} + \int_{0}^{1} f(x) \, dx
-$$
+* **Redes Neuronales Artificiales (ANN)**, copian las redes neuronales biológicas y aprenden patrones complejos en grandes volúmenes de datos, como los niveles de SST en distintas condiciones ambientales [@Moeini2021],
 
+* **k-Nearest Neighbors (kNN)**, en sus variantes de ponderación uniforme y variable, que estima el SST en función de la cercanía en características de nuevos puntos de muestreo con datos históricos [@Moeini2021].
 
-# Ejecución de código
+El aprendizaje automático es esencial para mejorar la precisión y rapidez en el análisis de la calidad del agua, proporcionando un monitoreo más eficiente y menos costoso en comparación con los métodos tradicionales, especialmente en áreas de difícil acceso o con datos limitados.
 
-Se puede agregar scripts y ejecutarlos mostrando sus resultados.
+:::: {.content-visible when-format="html"}
 
-## Python
+::: {.column-screen-right}
 
-```{python}
-import pandas as pd
+| **Modelo de machine learning** | **Software** | **Agua** | **Datos** | **Métricas** | **Referencias** |
+|:--|:--|:--|:--|:--|:-:|
+|Bagging y Random Forest|Programa R|Bahía|Muestreo|Prueba de normalidad multivalente Mardia-tests y Royston|@Carpio2021|
+|Regresión lineal, LASSO, regresión de vectores de soporte (SVR), K vecinos más cercanos (KNN), bosque aleatorio (RF) y redes neuronales artificiales (ANN).|-|Lago y embalse|Sentinel-2 y UAV|$R^{2}$| @Silveira2020|
+|Regresión lineal, regresión de vectores de soporte (SVR), K vecinos más cercanos (KNN), bosque aleatorio (RF) y redes neuronales artificiales (ANN).|Programa Python|Lagos|Estación de monitoreo (Sensores para cada parámetro)|$R^{2}$, NSE y RMSE| @Moeini2021|
 
-a = pd.DataFrame([1, 2, 3], index=["a", "b", "c"])
+: Características principales de algoritmos de aprendizaje automático para la estimación de sólidos suspendidos. {#tbl-solsus-machine .striped .hover tbl-colwidths="[40,12,12,13,13,10]"}
 
-print(a)
-```
+:::
 
-## R
+::::
 
-```{r}
-library(tibble)
+:::: {.content-visible when-format="typst"}
 
-tibble(x = 1:3)
-```
+| Modelo de machine learning | Referencias |
+|:--|:-:|
+|Bagging y Random Forest| [@Carpio2021] |
+|Regresión lineal, LASSO, regresión de vectores de soporte (SVR), K vecinos más cercanos (KNN), bosque aleatorio (RF) y redes neuronales artificiales (ANN).| [@Silveira2020] |
+|Regresión lineal, regresión de vectores de soporte (SVR), K vecinos más cercanos (KNN), bosque aleatorio (RF) y redes neuronales artificiales (ANN).| [@Moeini2021] |
 
-# Tabla
+: Características principales de algoritmos de aprendizaje automático para la estimación de sólidos suspendidos. {#tbl-solsus-machine .striped .hover tbl-colwidths="[80,20]"}
 
-| columna1 | columna2 | columna3 |
-|:-:|:--|--:|
-| a1 | b2 | c3 |
-| d4 | e5 | f6 |
+::: {.block stroke='rgb("#B86092")' inset="8pt" radius="4pt"}
 
-: Tabla con columnas {#tbl-tabla}
+[Ver tabla completa en la versión online &#x2197;](https://vhgauto.quarto.pub/gistaq-parana/#tbl-solsus-machine)
 
-[Crear mis propias tablas](https://www.tablesgenerator.com/markdown_tables).
+:::
 
-# Imagen
-
-![Logo del GISTAQ](img/logo-gistaq.png){width=40% #fig-logo}
+::::
