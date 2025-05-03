@@ -190,3 +190,93 @@ fig.suptitle("Regresión lineal")
 plt.show()
 ```
 
+
+```{python}
+import pandas as pd
+
+# 1. Cargar los archivos CSV
+lab = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_lab.csv")
+gis = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_gis.csv")
+
+# 2. Filtrar los datos del laboratorio donde param es 'sol_sus'
+lab_sol_sus = lab[lab["param"] == "sol_sus"]
+
+# 3. Combinar los datos de sol_sus con los datos GIS según latitud y longitud
+combinado = pd.merge(
+    lab_sol_sus,
+    gis,
+    on=["latitud", "longitud"],
+    how="inner",  # solo combina donde las coordenadas coinciden
+    suffixes=("_lab", "_gis")  # para distinguir columnas si se repiten
+)
+
+# 4. Ver los primeros resultados
+print(combinado.head())
+
+# 5. Guardar en un nuevo archivo si lo deseás
+combinado.to_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\sol_sus_combinado.csv", index=False)
+```
+
+```{python}
+# Pivotear: columnas = bandas, filas = punto, valores = reflectancia
+pivot = combinado.pivot_table(
+    index=['latitud', 'longitud', 'valor'],  # valor es sol_sus
+    columns='banda',
+    values='reflect'
+).reset_index()
+
+# Limpiar nombre de columnas (evita que 'banda' quede como índice jerárquico)
+pivot.columns.name = None
+
+# Ver resultado
+print(pivot.head())
+
+# Guardar en archivo CSV
+pivot.to_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\sol_sus_pivoteado.csv", index=False)
+```
+
+
+```{python}
+import pandas as pd
+
+# 1. Cargar los archivos
+lab = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_lab.csv")
+gis = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_gis.csv")
+
+# 2. Filtrar los datos de laboratorio con param = 'sol_sus'
+lab_sol_sus = lab[lab['param'] == 'sol_sus']
+
+# 3. Combinar con GIS por latitud y longitud
+combinado = pd.merge(
+    lab_sol_sus,
+    gis,
+    on=['latitud', 'longitud'],
+    how='inner'
+)
+
+# 4. Crear nueva columna que combine banda + pixel (ej: 'B02_1x1', 'B02_3x3')
+combinado['banda_pixel'] = combinado['banda'] + "_" + combinado['pixel']
+
+# 5. Pivotear usando banda_pixel como columnas
+pivot = combinado.pivot_table(
+    index=['latitud', 'longitud', 'valor'],  # valor es sol_sus
+    columns='banda_pixel',
+    values='reflect'
+).reset_index()
+
+# 6. Limpiar nombres de columnas
+pivot.columns.name = None
+
+# 7. Ver resultado
+print(pivot.head())
+
+# 8. Guardar en CSV
+pivot.to_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\sol_sus_pivoteado_pixel.csv", index=False)
+```
+
+
+```{python}
+
+```
+
+
