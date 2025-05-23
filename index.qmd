@@ -1,5 +1,5 @@
 ---
-title: "Mi sitio"
+title: "Análisis de Sólidos Suspendidos"
 format: 
   html:
     number-sections: true
@@ -155,11 +155,9 @@ p_r2 = r2_score(y_test, y_pred)
 ```
 
 ::: {.callout-note icon="false" title="Métricas de desempeño"}
-
 El error cuadrático medio es: `{r} round(py$p_rmse, 3)`.
 
 El coeficiente de determinación (R<sup>2</sup>) es: `{r} round(py$p_r2, 3)`.
-
 :::
 
 Visualizo los resultados comparando el conjunto de entrenamiento y validación.
@@ -191,92 +189,174 @@ plt.show()
 ```
 
 
+### Procesamiento de datos ambientales con Python
+
+Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada con el objetivo de analizar el comportamiento del parámetro **sólidos suspendidos (sol_sus)** en una región específica (pixel `3x3`). Para esto, utilicé el lenguaje Python y la biblioteca `pandas`, que resulta particularmente eficiente para el manejo de estructuras tabulares. 
+
+#### Carga de datos
+
+Primero importo la biblioteca `pandas`, una herramienta en Python que se utiliza para manejar datos en formato tabular (como hojas de cálculo o CSVs). Le damos el alias `pd` por convención, para simplificar el código.
+
+Luego cargo dos archivos CSV con la función `pd.read_csv()`, la cual convierte dichos archivos en objetos del tipo `DataFrame`, que representan tablas en memoria, que son estructuras de datos similares a tablas (parecida a una hoja de Excel). Los conjuntos de datos cargados fueron:
+
+- `gis_df`: contiene información geográfica (latitud, longitud, pixel, etc.).
+- `lab_df`: contiene datos de laboratorio, incluyendo el parámetro de interés `sol_sus`.
+
+ Verifico la carga correcta mostrando las primeras filas con la función `.head()`. Es útil para ver rápidamente cómo es la estructura del archivo: qué columnas hay, qué tipo de datos, si se cargó bien.
+
 ```{python}
-import pandas as pd
+import pandas as pd  # pandas es la biblioteca para manejar datos tabulares
 
-# 1. Cargar los archivos CSV
-lab = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_lab.csv")
-gis = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_gis.csv")
+# Cargar los archivos de datos
+gis_df = pd.read_csv('datos/base_de_datos_gis.csv')
+lab_df = pd.read_csv('datos/base_de_datos_lab.csv')
 
-# 2. Filtrar los datos del laboratorio donde param es 'sol_sus'
-lab_sol_sus = lab[lab["param"] == "sol_sus"]
+# Ver las primeras filas para asegurarse de que se cargaron bien
+gis_df.head(), lab_df.head()
+```
 
-# 3. Combinar los datos de sol_sus con los datos GIS según latitud y longitud
-combinado = pd.merge(
-    lab_sol_sus,
-    gis,
+::: {.dropdown}
+<details>
+<summary>Nota técnica</summary>
+
+- `pd.read_csv()` carga los archivos en estructuras llamadas *dataframes*, que funcionan como tablas.  
+- `head()` te muestra las primeras 5 filas para ver cómo están los datos.
+
+</details>
+
+:::
+
+#### Filtrar el parámetro 'sol_sus'
+
+En el conjunto de datos del laboratorio `lab_df`, hay múltiples parámetros medidos (como pH, turbidez, etc.). En este caso, me interesa trabajar solamente con los datos de **sólidos suspendidos**, identificado como `"sol_sus"` en la columna `param`. Este filtrado selectivo lo realicé para limitar el análisis al fenómeno físico-químico de interés.
+
+Filtré el DataFrame para quedarme solo con esas filas, y renombré la columna `valor` como `sol_sus` para que sea más claro en los siguientes pasos.
+
+```{python}
+# Filtramos solo las filas donde el parámetro es 'sol_sus'
+sol_sus_df = lab_df[lab_df["param"] == "sol_sus"]
+
+# Renombramos la columna 'valor' a 'sol_sus' para que tenga sentido en el merge
+sol_sus_df = sol_sus_df.rename(columns={"valor": "sol_sus"})
+
+# Mostramos para confirmar
+sol_sus_df.head()
+```
+
+::: {.dropdown}
+<details>
+<summary>Nota técnica</summary>
+
+- `lab_df[lab_df["param"] == "sol_sus"]` filtra las filas cuyo valor en la columna `"param"` sea `"sol_sus"`.  
+- `.rename(columns={"valor": "sol_sus"})` cambia el nombre de la columna `"valor"` a `"sol_sus"`.
+
+</details>
+
+:::
+
+#### Combinar datos geoespaciales y de laboratorio
+
+Ahora quiero unir los datos de ubicación (latitud, longitud) con los valores de sol_sus. Para eso uní ambos conjuntos de datos usando `pd.merge()`, que combina tablas usando columnas comunes.
+En este caso, usé las columnas `latitud` y `longitud` para juntar las filas que corresponden a la misma ubicación.
+La unión fue de tipo `"inner"`, que mantiene solo las filas que aparecen en ambas tablas, asegurando que solo trabajemos con datos coincidentes.
+
+```{python}
+# Unimos por latitud y longitud
+df_combinado = pd.merge(
+    gis_df,
+    sol_sus_df[["latitud", "longitud", "sol_sus"]],
     on=["latitud", "longitud"],
-    how="inner",  # solo combina donde las coordenadas coinciden
-    suffixes=("_lab", "_gis")  # para distinguir columnas si se repiten
+    how="inner"
 )
 
-# 4. Ver los primeros resultados
-print(combinado.head())
-
-# 5. Guardar en un nuevo archivo si lo deseás
-combinado.to_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\sol_sus_combinado.csv", index=False)
+df_combinado.head()
 ```
+
+::: {.dropdown}
+<details>
+<summary>Nota técnica</summary>
+
+- `pd.merge()` permite combinar dos DataFrames en uno nuevo, uniendo filas que coincidan en las columnas especificadas.  
+- `on=["latitud", "longitud"]` indica que la combinación debe hacerse usando esas columnas como claves.  
+- `how="inner"` especifica el tipo de combinación:  
+  - `"inner"`: solo conserva las filas donde hay coincidencia en ambos DataFrames.  
+  - Otras opciones:  
+    - `"left"`: conserva todas las filas del primer DataFrame.  
+    - `"right"`: conserva todas las filas del segundo.  
+    - `"outer"`: conserva todo, incluso si no hay coincidencia.
+
+</details>
+
+:::
+
+#### Filtrado espacial por pixel
+
+Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la columna `pixel` para conservar únicamente las filas correspondientes al área geográfica designada como `"3x3"`. Este paso reduce el dominio de análisis y permite concentrarse en una región de estudio concreta.
 
 ```{python}
-# Pivotear: columnas = bandas, filas = punto, valores = reflectancia
-pivot = combinado.pivot_table(
-    index=['latitud', 'longitud', 'valor'],  # valor es sol_sus
-    columns='banda',
-    values='reflect'
-).reset_index()
+# Filtramos solo los datos del pixel 3x3
+df_pixel_3x3 = df_combinado[df_combinado["pixel"] == "3x3"]
 
-# Limpiar nombre de columnas (evita que 'banda' quede como índice jerárquico)
-pivot.columns.name = None
-
-# Ver resultado
-print(pivot.head())
-
-# Guardar en archivo CSV
-pivot.to_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\sol_sus_pivoteado.csv", index=False)
+df_pixel_3x3.head()
 ```
 
+::: {.dropdown}
+<details>
+<summary>Nota técnica</summary>
+
+- Usa filtrado booleano (`DataFrame[condición]`), que es la forma estándar en pandas para seleccionar subconjuntos de datos. 
+- `df_pixel_3x3 = df_combinado[df_combinado["pixel"] == "3x3"]` selecciona ese subconjunto. Filtra las filas cuyo valor en la columna `"pixel"` es igual a `"3x3"`.
+
+</details>
+
+:::
+
+#### Reordenamiento de columnas
+
+Para facilitar la lectura y el análisis del `DataFrame` final, reorganicé las columnas de manera que las variables `fecha`, `longitud` y `latitud` figuren al comienzo. 
 
 ```{python}
-import pandas as pd
+# Reordenar las columnas
+columnas_ordenadas = ['fecha', 'longitud', 'latitud'] + [col for col in df_pixel_3x3.columns if col not in ['fecha', 'longitud', 'latitud']]
+df_reordenado = df_pixel_3x3[columnas_ordenadas]
 
-# 1. Cargar los archivos
-lab = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_lab.csv")
-gis = pd.read_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\base_de_datos_gis.csv")
-
-# 2. Filtrar los datos de laboratorio con param = 'sol_sus'
-lab_sol_sus = lab[lab['param'] == 'sol_sus']
-
-# 3. Combinar con GIS por latitud y longitud
-combinado = pd.merge(
-    lab_sol_sus,
-    gis,
-    on=['latitud', 'longitud'],
-    how='inner'
-)
-
-# 4. Crear nueva columna que combine banda + pixel (ej: 'B02_1x1', 'B02_3x3')
-combinado['banda_pixel'] = combinado['banda'] + "_" + combinado['pixel']
-
-# 5. Pivotear usando banda_pixel como columnas
-pivot = combinado.pivot_table(
-    index=['latitud', 'longitud', 'valor'],  # valor es sol_sus
-    columns='banda_pixel',
-    values='reflect'
-).reset_index()
-
-# 6. Limpiar nombres de columnas
-pivot.columns.name = None
-
-# 7. Ver resultado
-print(pivot.head())
-
-# 8. Guardar en CSV
-pivot.to_csv(r"F:\Users\Ariadna\Documentos\GitHub\Solidos_suspendidos\datos\sol_sus_pivoteado_pixel.csv", index=False)
+# Mostramos las primeras filas para verificar
+df_reordenado.head()
 ```
 
+::: {.dropdown}
+<details>
+<summary>Nota técnica</summary>
+
+- `[col for col in df_pixel_3x3.columns if col not in [...]]` genera una lista con todas las columnas excepto las que se indican explícitamente. Esto permite personalizar el orden de las columnas de forma flexible.   
+- `['fecha', 'longitud', 'latitud'] + [...]` reordena las columnas.  
+- `df_pixel_3x3[columnas_ordenadas]` reordena efectivamente las columnas del DataFrame con base en la lista definida.
+
+</details>
+
+:::
+
+#### Guardar el archivo final
+
+Finalmente, guardo el resultado como un nuevo archivo .csv dentro de la carpeta datos/. 
+
+Por último, exporté el resultado a un nuevo archivo en formato `.csv`, mediante la función `to_csv()` de pandas, con el parámetro `index=False` para evitar que la columna de índice se incluya en el archivo de salida que pandas crea por defecto.
+Esto me permite utilizarlo después para visualización o análisis posterior.
 
 ```{python}
-
+# Guardar el archivo CSV dentro de la carpeta "datos"
+df_reordenado.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 ```
+
+::: {.dropdown}
+<details>
+<summary>Nota técnica</summary>
+
+- `to_csv()`  guarda los datos en formato CSV.  
+- `index=False` evita que se guarde el índice numérico del DataFrame como una columna adicional en el CSV.
+
+</details>
+
+:::
 
 
