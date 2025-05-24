@@ -25,6 +25,9 @@ keywords:
   - UTN
   - FRRe
   - Quarto
+jupyter: python3
+execute:
+  echo: true
 ---
 
 ## Sólidos suspendidos totales<span style="font-weight:normal; font-size: 1rem">, por Vera Geneyer (https://github.com/VeraGeneyer)</span> {toc-text="Sólidos suspendidos totales"}
@@ -114,6 +117,7 @@ El aprendizaje automático es esencial para mejorar la precisión y rapidez en e
 
 ::::
 
+
 Diferentes metodologías para la resolución de una regresión simple por el método de mínimos cuadrados.
 
 ## **Python**, con `sklearn`
@@ -158,6 +162,7 @@ p_r2 = r2_score(y_test, y_pred)
 El error cuadrático medio es: `{r} round(py$p_rmse, 3)`.
 
 El coeficiente de determinación (R<sup>2</sup>) es: `{r} round(py$p_r2, 3)`.
+
 :::
 
 Visualizo los resultados comparando el conjunto de entrenamiento y validación.
@@ -189,13 +194,13 @@ plt.show()
 ```
 
 
-### Procesamiento de datos ambientales con Python
+### Procesamiento de datos con Python
 
 Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada con el objetivo de analizar el comportamiento del parámetro **sólidos suspendidos (sol_sus)** en una región específica (pixel `3x3`). Para esto, utilicé el lenguaje Python y la biblioteca `pandas`, que resulta particularmente eficiente para el manejo de estructuras tabulares. 
 
 #### Carga de datos
 
-Primero importo la biblioteca `pandas`, una herramienta en Python que se utiliza para manejar datos en formato tabular (como hojas de cálculo o CSVs). Le damos el alias `pd` por convención, para simplificar el código.
+Primero importo la biblioteca `pandas`, una herramienta en Python que se utiliza para manejar datos en formato tabular (como hojas de cálculo o CSVs). Se le da el alias `pd` por convención, para simplificar el código.
 
 Luego cargo dos archivos CSV con la función `pd.read_csv()`, la cual convierte dichos archivos en objetos del tipo `DataFrame`, que representan tablas en memoria, que son estructuras de datos similares a tablas (parecida a una hoja de Excel). Los conjuntos de datos cargados fueron:
 
@@ -213,14 +218,21 @@ lab_df = pd.read_csv('datos/base_de_datos_lab.csv')
 
 # Ver las primeras filas para asegurarse de que se cargaron bien
 gis_df.head(), lab_df.head()
+
+print("Primeras filas de gis_df:")
+display(gis_df.head())
+
+print("\nPrimeras filas de lab_df:")
+display(lab_df.head())
 ```
 
 ::: {.dropdown}
 <details>
-<summary>Nota técnica</summary>
+<summary>📄 Nota técnica</summary>
 
 - `pd.read_csv()` carga los archivos en estructuras llamadas *dataframes*, que funcionan como tablas.  
 - `head()` te muestra las primeras 5 filas para ver cómo están los datos.
+- `display()` permite mostrar las tablas con formato más visual (en HTML).
 
 </details>
 
@@ -241,11 +253,14 @@ sol_sus_df = sol_sus_df.rename(columns={"valor": "sol_sus"})
 
 # Mostramos para confirmar
 sol_sus_df.head()
+
+print("Primeras filas de sol_sus_df:")
+display(sol_sus_df.head())
 ```
 
 ::: {.dropdown}
 <details>
-<summary>Nota técnica</summary>
+<summary>📄 Nota técnica</summary>
 
 - `lab_df[lab_df["param"] == "sol_sus"]` filtra las filas cuyo valor en la columna `"param"` sea `"sol_sus"`.  
 - `.rename(columns={"valor": "sol_sus"})` cambia el nombre de la columna `"valor"` a `"sol_sus"`.
@@ -270,11 +285,13 @@ df_combinado = pd.merge(
 )
 
 df_combinado.head()
+print("Primeras filas de df_combinado:")
+display(df_combinado.head())
 ```
 
 ::: {.dropdown}
 <details>
-<summary>Nota técnica</summary>
+<summary>📄 Nota técnica</summary>
 
 - `pd.merge()` permite combinar dos DataFrames en uno nuevo, uniendo filas que coincidan en las columnas especificadas.  
 - `on=["latitud", "longitud"]` indica que la combinación debe hacerse usando esas columnas como claves.  
@@ -298,11 +315,13 @@ Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la 
 df_pixel_3x3 = df_combinado[df_combinado["pixel"] == "3x3"]
 
 df_pixel_3x3.head()
+print("Primeras filas de df_pixel_3x3:")
+display(df_pixel_3x3.head())
 ```
 
 ::: {.dropdown}
 <details>
-<summary>Nota técnica</summary>
+<summary>📄 Nota técnica</summary>
 
 - Usa filtrado booleano (`DataFrame[condición]`), que es la forma estándar en pandas para seleccionar subconjuntos de datos. 
 - `df_pixel_3x3 = df_combinado[df_combinado["pixel"] == "3x3"]` selecciona ese subconjunto. Filtra las filas cuyo valor en la columna `"pixel"` es igual a `"3x3"`.
@@ -322,11 +341,13 @@ df_reordenado = df_pixel_3x3[columnas_ordenadas]
 
 # Mostramos las primeras filas para verificar
 df_reordenado.head()
+print("Primeras filas de df_reordenado:")
+display(df_reordenado.head())
 ```
 
 ::: {.dropdown}
 <details>
-<summary>Nota técnica</summary>
+<summary>📄 Nota técnica</summary>
 
 - `[col for col in df_pixel_3x3.columns if col not in [...]]` genera una lista con todas las columnas excepto las que se indican explícitamente. Esto permite personalizar el orden de las columnas de forma flexible.   
 - `['fecha', 'longitud', 'latitud'] + [...]` reordena las columnas.  
@@ -338,9 +359,9 @@ df_reordenado.head()
 
 #### Guardar el archivo final
 
-Finalmente, guardo el resultado como un nuevo archivo .csv dentro de la carpeta datos/. 
+Finalmente, guardo el resultado como un nuevo archivo .csv dentro de la carpeta datos. 
 
-Por último, exporté el resultado a un nuevo archivo en formato `.csv`, mediante la función `to_csv()` de pandas, con el parámetro `index=False` para evitar que la columna de índice se incluya en el archivo de salida que pandas crea por defecto.
+Por último, exporto el resultado a un nuevo archivo en formato `.csv`, mediante la función `to_csv()` de pandas, con el parámetro `index=False` para evitar que la columna de índice se incluya en el archivo de salida que pandas crea por defecto.
 Esto me permite utilizarlo después para visualización o análisis posterior.
 
 ```{python}
@@ -350,7 +371,7 @@ df_reordenado.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 
 ::: {.dropdown}
 <details>
-<summary>Nota técnica</summary>
+<summary>📄 Nota técnica</summary>
 
 - `to_csv()`  guarda los datos en formato CSV.  
 - `index=False` evita que se guarde el índice numérico del DataFrame como una columna adicional en el CSV.
@@ -360,3 +381,288 @@ df_reordenado.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 :::
 
 
+### Análisis de Regresión Lineal
+
+En este análisis aplico un modelo de regresión lineal simple para estudiar la relación entre la **reflectancia** y los **sólidos suspendidos**, utilizando datos experimentales. La regresión lineal es una técnica fundamental del aprendizaje automático supervisado que nos permite predecir un valor continuo basado en una o más variables independientes. A lo largo de este documento, se explican paso a paso las acciones realizadas y los conceptos clave para comprender y replicar este análisis.
+
+#### Importar librerías
+
+En este paso, cargo las bibliotecas necesarias para procesar datos, ajustar modelos de regresión, evaluar su desempeño y visualizar los resultados. 
+
+```{python}
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+```
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> `pandas` se utiliza para manejar datos en forma de tablas (DataFrames), especialmente útiles al trabajar con archivos `.csv`.
+
+> `train_test_split` permite dividir los datos en subconjuntos de entrenamiento y prueba, lo cual es esencial para evaluar el desempeño de un modelo sin sobreajustarlo.
+
+> `LinearRegression` representa un modelo lineal que se ajusta a los datos minimizando el error cuadrático entre las predicciones y los valores reales.
+
+> `mean_squared_error` y `r2_score` son métricas de evaluación: el primero mide el promedio de los errores al cuadrado, mientras que el segundo indica qué tan bien el modelo explica la variabilidad de los datos.
+
+> `matplotlib.pyplot` se utiliza para crear gráficos. Permite visualizar los datos y los resultados del modelo.
+ 
+</details>
+
+:::
+
+#### Cargar datos desde un CSV
+
+Importo el archivo `.csv` con los datos experimentales. Se visualizan las primeras filas para verificar que los datos se han cargado correctamente.
+
+```{python}
+# Cargamos el CSV
+datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+
+# Mostramos las primeras filas para verificar
+datos.head()
+print("Primeras filas de datos:")
+display(datos.head())
+```
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> `pd.read_csv` carga datos desde un archivo `.csv` y los convierte en un DataFrame de Pandas. Esta estructura tabular permite filtrar, seleccionar y transformar fácilmente los datos.
+
+> `datos.head()` permite ver las primeras 5 filas del DataFrame para tener una vista preliminar de los datos cargados.
+
+</details>
+
+:::
+
+
+
+#### Seleccionar variables y dividir en conjuntos
+
+Selecciono las variables relevantes: `reflect` como variable independiente y `sol_sus` como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.
+
+```{python}
+# Selección de variables
+X = datos[["reflect"]]
+y = datos["sol_sus"]
+
+# División en entrenamiento y validación
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+```
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> Se selecciona una columna como variable independiente (X) y otra como variable dependiente (y). Es importante usar doble corchete al seleccionar una sola columna como X para mantener la estructura de tabla.
+
+> `train_test_split` divide el conjunto de datos en entrenamiento y prueba. Esto permite entrenar el modelo en un subconjunto y evaluar su capacidad de generalización con otro.
+
+> El parámetro `test_size=0.2` indica que el 20% de los datos se usan para prueba. `shuffle=False` mantiene el orden original de los datos, útil cuando los datos están organizados temporalmente o espacialmente.
+
+</details>
+
+:::
+
+#### Entrenar modelo de regresión lineal
+
+En este paso se entrena un modelo de regresión lineal usando los datos de entrenamiento. El modelo aprende la relación matemática entre la reflectancia y los sólidos suspendidos.
+
+```{python}
+regressor = LinearRegression().fit(X_train, y_train)
+```
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> `LinearRegression().fit()` ajusta un modelo lineal a los datos de entrenamiento. Internamente calcula la pendiente e intercepto que minimizan la diferencia entre las predicciones y los valores reales.
+
+</details>
+
+:::
+
+#### Evaluar desempeño del modelo
+
+Una vez entrenado el modelo, evaluo su desempeño usando métricas estadísticas. Estas nos permiten cuantificar qué tan bien el modelo predice los valores de sólidos suspendidos a partir de la reflectancia en los datos de prueba.
+
+
+```{python}
+y_pred = regressor.predict(X_test)
+p_rmse = mean_squared_error(y_test, y_pred)
+p_r2 = r2_score(y_test, y_pred)
+
+```
+
+::: {.callout-note title="Métricas de desempeño"}
+
+```{python}
+#| echo: false
+
+print("El error cuadrático medio es:", round(p_rmse, 3))
+print("El coeficiente de determinación (R²) es:", round(p_r2, 3))
+```
+:::
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> `predict()` genera predicciones del modelo usando los datos de prueba. Estas predicciones se comparan con los valores reales para evaluar el desempeño.
+
+> `mean_squared_error` calcula el promedio de los errores al cuadrado. Cuanto menor sea este valor, mejor se ajusta el modelo.
+
+> `r2_score` mide qué proporción de la variabilidad en los datos es explicada por el modelo. Un valor cercano a 1 indica una buena predicción.
+
+</details>
+
+:::
+
+#### Visualizar el modelo
+
+Finalmente, se visualiza gráficamente la relación entre reflectancia y sólidos suspendidos, tanto en el conjunto de entrenamiento como en el de prueba. Esto ayuda a interpretar de forma visual cómo se ajusta el modelo a los datos reales.
+
+```{python}
+fig, ax = plt.subplots(ncols=2, figsize=(10, 5), sharex=True, sharey=True)
+
+# Gráfico entrenamiento
+ax[0].plot(X_train, regressor.predict(X_train), linewidth=3, color="#17A77E", label="Modelo")
+ax[0].scatter(X_train, y_train, label="Entrenamiento", color="#9D50A6", alpha=0.6)
+ax[0].set(xlabel="Reflectancia", ylabel="Sol_Sus", title="Conjunto de entrenamiento")
+ax[0].legend()
+
+# Gráfico validación
+ax[1].plot(X_test, y_pred, linewidth=3, color="#17A77E", label="Modelo")
+ax[1].scatter(X_test, y_test, label="Validación", color="#9D50A6", alpha=0.6)
+ax[1].set(xlabel="Reflectancia", ylabel="Sol_Sus", title="Conjunto de validación")
+ax[1].legend()
+
+fig.suptitle("Regresión lineal")
+
+plt.show()
+```
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> `plt.subplots` crea una figura con uno o más ejes para dibujar. Permite organizar varios gráficos en una misma figura.
+
+> `plot()` traza una línea continua. Se usa para mostrar la línea de regresión generada por el modelo.
+
+> `scatter()` traza puntos individuales. Se usa para mostrar los datos reales y compararlos con la línea del modelo.
+
+> `set()` configura etiquetas de ejes y títulos de los subgráficos.
+
+> `legend()` muestra una leyenda que identifica cada elemento del gráfico.
+
+> `fig.suptitle()` agrega un título general a la figura completa.
+
+> `plt.show()` es necesario para visualizar los gráficos al renderizar el documento.
+
+</details>
+
+:::
+
+
+### Regresión lineal simple usando una sola banda espectral (B01)
+
+En este análisis voy a construir un modelo de regresión lineal simple para predecir la variable **sol_sus** a partir de una única variable independiente: la **banda espectral B01**. 
+
+El objetivo es evaluar la capacidad de esta banda individual para explicar el comportamiento de la variable de interés.
+
+::: {.callout-tip title="¿Qué cambió respecto al ejemplo anterior?"}
+En el ejemplo anterior, el conjunto de datos contiene reflectancia medida en distintas bandas espectrales, identificadas en la columna `banda` (como "B01", "B02", etc.).
+Ahora, para el análisis, selecciono solo las filas donde `banda` es `B01`, usando sus valores de reflectancia (`reflect`) como variable independiente `X` para predecir los sólidos suspendidos (`sol_sus`).
+
+:::
+
+#### Importación de librerías
+
+```{python}
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+```
+
+#### Carga de datos
+
+```{python}
+df = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+df.head()
+```
+
+#### Selección de variables y división de datos
+
+```{python}
+df_B01 = df[df['banda'] == 'B01']
+
+X = df_B01[['reflect']]  # Variable independiente: reflectancia para B01
+y = df_B01['sol_sus']    # Variable dependiente
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, shuffle=False
+)
+```
+
+::: {.dropdown}
+<details>
+<summary>📄 Nota técnica</summary>
+
+> `df[df['banda'] == 'B01']` es un filtro en pandas para seleccionar solo las filas donde la columna "banda" tenga el valor "B01". El resultado es un nuevo DataFrame con solo esas filas.
+
+</details>
+
+:::
+
+#### Entrenamiento del modelo
+
+```{python}
+regressor = LinearRegression().fit(X_train, y_train)
+```
+
+#### Evaluación del modelo
+
+```{python}
+y_pred = regressor.predict(X_test)
+p_rmse = mean_squared_error(y_test, y_pred)
+p_r2 = r2_score(y_test, y_pred)
+```
+
+::: {.callout-note title="Métricas de desempeño"}
+
+```{python}
+#| echo: false
+print(f"Error cuadrático medio (RMSE): {p_rmse:.3f}")
+print(f"Coeficiente de determinación (R²): {p_r2:.3f}")
+```
+:::
+
+#### Visualización de resultados
+
+```{python}
+fig, ax = plt.subplots(ncols=2, figsize=(10, 5), sharex=True, sharey=True)
+
+# Conjunto de entrenamiento
+ax[0].plot(X_train, regressor.predict(X_train), linewidth=3, color="#17A77E", label="Modelo")
+ax[0].scatter(X_train, y_train, label="Entrenamiento", color="#9D50A6", alpha=0.6)
+ax[0].set(xlabel="B01", ylabel="Sol_sus", title="Conjunto de entrenamiento")
+ax[0].legend()
+
+# Conjunto de validación
+ax[1].plot(X_test, y_pred, linewidth=3, color="#17A77E", label="Modelo")
+ax[1].scatter(X_test, y_test, label="Validación", color="#9D50A6", alpha=0.6)
+ax[1].set(xlabel="B01", ylabel="Sol_sus", title="Conjunto de validación")
+ax[1].legend()
+
+fig.suptitle("Regresión lineal - B01 vs Sol_sus")
+plt.show()
+```
