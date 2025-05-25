@@ -3,7 +3,9 @@ title: "Análisis de Sólidos Suspendidos"
 format: 
   html:
     number-sections: true
-    toc: true
+    toc: true 
+    toc-location: right
+    toc-depth: 3
     embed-resources: true
     crossrefs-hover: false
     lang: es
@@ -192,6 +194,8 @@ fig.suptitle("Regresión lineal")
 
 plt.show()
 ```
+
+:::
 
 
 ### Procesamiento de datos con Python
@@ -441,8 +445,6 @@ display(datos.head())
 
 :::
 
-
-
 #### Seleccionar variables y dividir en conjuntos
 
 Selecciono las variables relevantes: `reflect` como variable independiente y `sol_sus` como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.
@@ -491,7 +493,6 @@ regressor = LinearRegression().fit(X_train, y_train)
 #### Evaluar desempeño del modelo
 
 Una vez entrenado el modelo, evaluo su desempeño usando métricas estadísticas. Estas nos permiten cuantificar qué tan bien el modelo predice los valores de sólidos suspendidos a partir de la reflectancia en los datos de prueba.
-
 
 ```{python}
 y_pred = regressor.predict(X_test)
@@ -569,6 +570,7 @@ plt.show()
 </details>
 
 :::
+
 
 
 ### Regresión lineal simple usando una sola banda espectral (B01)
