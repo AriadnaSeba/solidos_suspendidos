@@ -13,10 +13,10 @@ format:
     csl: bibliografia/ieee.csl
 date: last-modified
 author:
-  - name: Víctor Gauto
-    orcid: 0000-0001-9960-8558
+  - name: Ariadna Malena Seba
+    orcid: 
     corresponding: true
-    email: victor.gauto@ca.frre.utn.edu.ar
+    email: ariadna.mseba@ca.frre.utn.edu.ar
     affiliations:
       - name: GISTAQ (UTN-FRRe)
         url: https://www.instagram.com/gistaq.utn/
@@ -120,85 +120,12 @@ El aprendizaje automático es esencial para mejorar la precisión y rapidez en e
 ::::
 
 
-Diferentes metodologías para la resolución de una regresión simple por el método de mínimos cuadrados.
+
 
 ## **Python**, con `sklearn`
 
-Se muestra a continuación el tutorial mostrado en para el modelo [Mínimos cuadrados ordinarios](https://scikit-learn.org/stable/auto_examples/linear_model/plot_ols.html#ordinary-least-squares-example).
 
-Importo la librería `sklearn`, funciones de interés y para generar figuras.
-
-```{python}
-from sklearn.datasets import load_diabetes
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
-```
-
-Cargo los datos de interés y divido en entrenamiento y validación.
-
-```{python}
-X, y = load_diabetes(return_X_y=True)
-X = X[:, [2]]  # Use only one feature
-X_train, X_test, y_train, y_test = train_test_split(
-  X, y, test_size=20, shuffle=False
-)
-```
-
-Creo un modelo de regresión y ajusto utilizando los datos de entrenamiento.
-
-```{python}
-regressor = LinearRegression().fit(X_train, y_train)
-```
-
-Evalúo el modelo generado a partir de las **métricas de desempeño**.
-
-```{python}
-y_pred = regressor.predict(X_test)
-p_rmse = mean_squared_error(y_test, y_pred)
-p_r2 = r2_score(y_test, y_pred)
-```
-
-::: {.callout-note icon="false" title="Métricas de desempeño"}
-El error cuadrático medio es: `{r} round(py$p_rmse, 3)`.
-
-El coeficiente de determinación (R<sup>2</sup>) es: `{r} round(py$p_r2, 3)`.
-
-:::
-
-Visualizo los resultados comparando el conjunto de entrenamiento y validación.
-
-::: {.column-body-outset}
-
-```{python}
-fig, ax = plt.subplots(ncols=2, figsize=(10, 5), sharex=True, sharey=True)
-
-ax[0].plot(
-    X_train,
-    regressor.predict(X_train),
-    linewidth=3,
-    color="#17A77E",
-    label="Modelo",
-)
-ax[0].scatter(X_train, y_train, label="Entrenamiento", color = "#9D50A6", alpha = .6)
-ax[0].set(xlabel="Característica", ylabel="Objetivo", title="Conjunto de entrenamiento")
-ax[0].legend()
-
-ax[1].plot(X_test, y_pred, linewidth=3, color="#17A77E", label="Modelo")
-ax[1].scatter(X_test, y_test, label="Validación", color = "#9D50A6", alpha = .6)
-ax[1].set(xlabel="Característica", ylabel="Objetivo", title="Conjunto de validación")
-ax[1].legend()
-
-fig.suptitle("Regresión lineal")
-
-plt.show()
-```
-
-:::
-
-
-### Procesamiento de datos con Python
+### Procesamiento de datos
 
 Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada con el objetivo de analizar el comportamiento del parámetro **sólidos suspendidos (sol_sus)** en una región específica (pixel `3x3`). Para esto, utilicé el lenguaje Python y la biblioteca `pandas`, que resulta particularmente eficiente para el manejo de estructuras tabulares. 
 
@@ -257,7 +184,6 @@ sol_sus_df = sol_sus_df.rename(columns={"valor": "sol_sus"})
 
 # Mostramos para confirmar
 sol_sus_df.head()
-
 print("Primeras filas de sol_sus_df:")
 display(sol_sus_df.head())
 ```
@@ -273,24 +199,62 @@ display(sol_sus_df.head())
 
 :::
 
-#### Combinar datos geoespaciales y de laboratorio
 
-Ahora quiero unir los datos de ubicación (latitud, longitud) con los valores de sol_sus. Para eso uní ambos conjuntos de datos usando `pd.merge()`, que combina tablas usando columnas comunes.
-En este caso, usé las columnas `latitud` y `longitud` para juntar las filas que corresponden a la misma ubicación.
-La unión fue de tipo `"inner"`, que mantiene solo las filas que aparecen en ambas tablas, asegurando que solo trabajemos con datos coincidentes.
+#### Transformar la columna banda en columnas individuales
+
+En este paso, convierto los valores únicos de la columna `banda` (como `B01`, `B02`, etc.) en nombres de columnas. Cada nueva columna contendrá los valores del parámetro `reflect` correspondientes a esa banda en particular. Esta operación se realiza antes de unir con los valores de `sol_sus`, ya que el valor de reflectancia depende de la banda, mientras que `sol_sus` es un dato independiente que se asignará luego por punto, fecha y ubicación.
 
 ```{python}
-# Unimos por latitud y longitud
-df_combinado = pd.merge(
-    gis_df,
-    sol_sus_df[["latitud", "longitud", "sol_sus"]],
-    on=["latitud", "longitud"],
-    how="inner"
+# Pivotamos la tabla para que cada banda sea una columna
+gis_pivot = gis_df.pivot_table(
+    index=['fecha', 'punto', 'pixel', 'latitud', 'longitud'],
+    columns='banda',
+    values='reflect'
+).reset_index()
+
+# Eliminamos el nombre del índice de columnas generado por el pivot
+gis_pivot.columns.name = None
+
+print("Primeras filas de gis_pivot:")
+display(gis_pivot.head())
+```
+
+::: {.dropdown}
+<details> 
+<summary>📄 Nota técnica</summary>
+
+- `pivot_table()` reorganiza el DataFrame convirtiendo los valores de una columna (`banda`) en columnas individuales.
+
+- `index=[...]` define las columnas que se mantendrán como claves (se repetirán por fila).
+
+- `columns='banda'` indica qué columna queremos transformar en nombres de columnas.
+
+- `values='reflect'` especifica qué valor colocar en cada celda de la nueva tabla.
+
+- `reset_index()` convierte los índices jerárquicos en columnas normales para facilitar el análisis.
+
+- `columns.name = None` quita la etiqueta "banda" que se agregaría al encabezado por defecto.
+
+</details> 
+
+:::
+
+
+#### Combinar datos geoespaciales y de laboratorio
+
+Una vez que las bandas han sido transformadas en columnas, combino esta tabla con los valores de sólidos suspendidos (`sol_sus`) provenientes del laboratorio. La combinación se hace usando las columnas `fecha`, `latitud` y `longitud`, que permiten identificar los datos correspondientes a un mismo punto geográfico y temporal.
+
+```{python}
+# Realizamos el merge por ubicación y fecha
+df_merged = pd.merge(
+    gis_pivot,
+    sol_sus_df[['fecha', 'latitud', 'longitud', 'sol_sus']],
+    on=['fecha', 'latitud', 'longitud'],
+    how='inner'
 )
 
-df_combinado.head()
-print("Primeras filas de df_combinado:")
-display(df_combinado.head())
+print("Primeras filas del DataFrame combinado:")
+display(df_merged.head())
 ```
 
 ::: {.dropdown}
@@ -316,10 +280,9 @@ Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la 
 
 ```{python}
 # Filtramos solo los datos del pixel 3x3
-df_pixel_3x3 = df_combinado[df_combinado["pixel"] == "3x3"]
+df_pixel_3x3 = df_merged[df_merged["pixel"] == "3x3"]
 
-df_pixel_3x3.head()
-print("Primeras filas de df_pixel_3x3:")
+print("Primeras filas del pixel 3x3:")
 display(df_pixel_3x3.head())
 ```
 
@@ -334,32 +297,6 @@ display(df_pixel_3x3.head())
 
 :::
 
-#### Reordenamiento de columnas
-
-Para facilitar la lectura y el análisis del `DataFrame` final, reorganicé las columnas de manera que las variables `fecha`, `longitud` y `latitud` figuren al comienzo. 
-
-```{python}
-# Reordenar las columnas
-columnas_ordenadas = ['fecha', 'longitud', 'latitud'] + [col for col in df_pixel_3x3.columns if col not in ['fecha', 'longitud', 'latitud']]
-df_reordenado = df_pixel_3x3[columnas_ordenadas]
-
-# Mostramos las primeras filas para verificar
-df_reordenado.head()
-print("Primeras filas de df_reordenado:")
-display(df_reordenado.head())
-```
-
-::: {.dropdown}
-<details>
-<summary>📄 Nota técnica</summary>
-
-- `[col for col in df_pixel_3x3.columns if col not in [...]]` genera una lista con todas las columnas excepto las que se indican explícitamente. Esto permite personalizar el orden de las columnas de forma flexible.   
-- `['fecha', 'longitud', 'latitud'] + [...]` reordena las columnas.  
-- `df_pixel_3x3[columnas_ordenadas]` reordena efectivamente las columnas del DataFrame con base en la lista definida.
-
-</details>
-
-:::
 
 #### Guardar el archivo final
 
@@ -370,7 +307,7 @@ Esto me permite utilizarlo después para visualización o análisis posterior.
 
 ```{python}
 # Guardar el archivo CSV dentro de la carpeta "datos"
-df_reordenado.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
+df_pixel_3x3.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 ```
 
 ::: {.dropdown}
@@ -383,6 +320,7 @@ df_reordenado.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 </details>
 
 :::
+
 
 
 ### Análisis de Regresión Lineal
@@ -447,11 +385,11 @@ display(datos.head())
 
 #### Seleccionar variables y dividir en conjuntos
 
-Selecciono las variables relevantes: `reflect` como variable independiente y `sol_sus` como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.
+Selecciono las variables relevantes: `B01` como variable independiente y `sol_sus` como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.
 
 ```{python}
 # Selección de variables
-X = datos[["reflect"]]
+X = datos[["B01"]]
 y = datos["sol_sus"]
 
 # División en entrenamiento y validación
@@ -572,99 +510,263 @@ plt.show()
 :::
 
 
-
-### Regresión lineal simple usando una sola banda espectral (B01)
-
-En este análisis voy a construir un modelo de regresión lineal simple para predecir la variable **sol_sus** a partir de una única variable independiente: la **banda espectral B01**. 
-
-El objetivo es evaluar la capacidad de esta banda individual para explicar el comportamiento de la variable de interés.
-
-::: {.callout-tip title="¿Qué cambió respecto al ejemplo anterior?"}
-En el ejemplo anterior, el conjunto de datos contiene reflectancia medida en distintas bandas espectrales, identificadas en la columna `banda` (como "B01", "B02", etc.).
-Ahora, para el análisis, selecciono solo las filas donde `banda` es `B01`, usando sus valores de reflectancia (`reflect`) como variable independiente `X` para predecir los sólidos suspendidos (`sol_sus`).
-
-:::
-
-#### Importación de librerías
+### Análisis de regresión por banda
 
 ```{python}
+#|code-fold: true
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
-```
+import math
 
-#### Carga de datos
+# Cargar datos
+datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
 
-```{python}
-df = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
-df.head()
-```
+# Detectar columnas de bandas
+bandas = [col for col in datos.columns if col.startswith("B")]
 
-#### Selección de variables y división de datos
+# Lista para guardar resultados
+resultados = []
 
-```{python}
-df_B01 = df[df['banda'] == 'B01']
+# Parámetros para organización de gráficos
+n_bandas = len(bandas)
+ncols = 2  # Número de columnas de la grilla
+nrows = math.ceil(n_bandas / ncols)  # Calculamos cuántas filas se necesitan
 
-X = df_B01[['reflect']]  # Variable independiente: reflectancia para B01
-y = df_B01['sol_sus']    # Variable dependiente
+# Crear figura
+fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(12, 4 * nrows))
+axs = axs.flatten()  # Asegura que podamos indexarlos como una lista
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, shuffle=False
-)
-```
+for i, banda in enumerate(bandas):
+    # Variables
+    X = datos[[banda]]
+    y = datos["sol_sus"]
 
-::: {.dropdown}
-<details>
-<summary>📄 Nota técnica</summary>
+    # División entrenamiento/prueba
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 
-> `df[df['banda'] == 'B01']` es un filtro en pandas para seleccionar solo las filas donde la columna "banda" tenga el valor "B01". El resultado es un nuevo DataFrame con solo esas filas.
+    # Ajuste del modelo
+    modelo = LinearRegression().fit(X_train, y_train)
+    y_train_pred = modelo.predict(X_train)
 
-</details>
+    # Métricas
+    r2 = modelo.score(X_train, y_train)
+    n = len(y_train)
+    p = X_train.shape[1]
+    r2_adj = 1 - (1 - r2) * (n - 1) / (n - p - 1)
+    rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
 
-:::
+    resultados.append({
+        "Banda": banda,
+        "R2": round(r2, 4),
+        "R2_ajustado": round(r2_adj, 4),
+        "RMSE": round(rmse, 4)
+    })
 
-#### Entrenamiento del modelo
+    # Gráfico de entrenamiento
+    ax = axs[i]
+    ax.scatter(X_train, y_train, alpha=0.6, color="#9D50A6", label="Entrenamiento")
+    ax.plot(X_train, y_train_pred, color="#17A77E", linewidth=1.8, label="Modelo")
+    ax.set_title(f'{banda}\nR²={r2:.2f}', fontsize=10)
+    ax.set_xlabel('Reflectancia', fontsize=8)
+    ax.set_ylabel('Sol_Sus', fontsize=8)
+    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.legend(fontsize=7)
+    ax.grid(True)
 
-```{python}
-regressor = LinearRegression().fit(X_train, y_train)
-```
+# Eliminar ejes sobrantes
+for j in range(i + 1, len(axs)):
+    fig.delaxes(axs[j])
 
-#### Evaluación del modelo
-
-```{python}
-y_pred = regressor.predict(X_test)
-p_rmse = mean_squared_error(y_test, y_pred)
-p_r2 = r2_score(y_test, y_pred)
-```
-
-::: {.callout-note title="Métricas de desempeño"}
-
-```{python}
-#| echo: false
-print(f"Error cuadrático medio (RMSE): {p_rmse:.3f}")
-print(f"Coeficiente de determinación (R²): {p_r2:.3f}")
-```
-:::
-
-#### Visualización de resultados
-
-```{python}
-fig, ax = plt.subplots(ncols=2, figsize=(10, 5), sharex=True, sharey=True)
-
-# Conjunto de entrenamiento
-ax[0].plot(X_train, regressor.predict(X_train), linewidth=3, color="#17A77E", label="Modelo")
-ax[0].scatter(X_train, y_train, label="Entrenamiento", color="#9D50A6", alpha=0.6)
-ax[0].set(xlabel="B01", ylabel="Sol_sus", title="Conjunto de entrenamiento")
-ax[0].legend()
-
-# Conjunto de validación
-ax[1].plot(X_test, y_pred, linewidth=3, color="#17A77E", label="Modelo")
-ax[1].scatter(X_test, y_test, label="Validación", color="#9D50A6", alpha=0.6)
-ax[1].set(xlabel="B01", ylabel="Sol_sus", title="Conjunto de validación")
-ax[1].legend()
-
-fig.suptitle("Regresión lineal - B01 vs Sol_sus")
+plt.suptitle("Regresiones lineales por banda (entrenamiento)", fontsize=14)
+plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.show()
+
+# Tabla resumen
+df_resultados = pd.DataFrame(resultados).sort_values("R2", ascending=False).reset_index(drop=True)
+print("Tabla resumen de métricas por banda:")
+display(df_resultados)
+
+```
+
+
+**Calidad del ajuste (R² y R² ajustado):**
+- **R² bajo (< 0.20)** en todas las bandas, lo cual indica que **ninguna banda aislada** explica buena parte de la variabilidad de los sólidos suspendidos.
+- **R² ajustado** muy similar a R² en las bandas con mejor desempeño (B08, B07, B05, B06), y **negativo** en las bandas con R² casi nulo (B03, B02, B01, B12, B11).  
+- **Un R² ajustado negativo** implica que usar la media de la variable (sin modelo) sería más eficaz que la regresión lineal simple.
+
+**Error de predicción (RMSE):**
+
+- **RMSE ≈ 25** para las cuatro mejores bandas (B08–B06), es decir, el error medio de predicción es de unas 25 unidades de `sol_sus`.  
+- Las bandas con peor R² (B11, B12) presentan **RMSE ≈ 27.5**, casi equivalente a predecir siempre la media.
+
+**Siguientes pasos recomendados:**
+
+1. **Regresión multivariable**  
+   Combinar las bandas mejor correlacionadas (por ejemplo, B08, B07, B05, B06) en un único modelo para evaluar si en conjunto mejoran R² y reducen RMSE.
+
+2. **Modelos no lineales**  
+   Probar algoritmos como **Random Forest**, **SVM** o **Redes Neuronales** para capturar relaciones no lineales o interacciones espectrales.
+
+3. **Ingeniería de variables**  
+  - Calcular **índices espectrales** (NDVI, índices de turbidez) como combinaciones de bandas.  
+  - Aplicar transformaciones (logaritmos, potencias) a las reflectancias o a `sol_sus` para estabilizar la varianza.
+
+4. **Validación cruzada**  
+   Implementar **k‑fold cross‑validation** para obtener métricas más robustas y evitar sobreajuste.
+
+
+#### Análisis de regresión por banda aplicando logaritmo a las variables
+
+```{python}
+#|code-fold: true
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+
+# Cargar datos
+datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+
+# Detectar columnas de bandas
+bandas = [col for col in datos.columns if col.startswith("B")]
+
+# Lista para guardar resultados
+resultados = []
+
+for banda in bandas:
+    # Variables: aplicamos logaritmo natural
+    X = np.log(datos[[banda]].replace(0, np.nan)).dropna()
+    y = np.log(datos.loc[X.index, "sol_sus"].replace(0, np.nan))
+    
+    # División en entrenamiento y prueba
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, shuffle=False
+    )
+
+    # Ajuste del modelo sobre los datos log-transformados
+    modelo = LinearRegression().fit(X_train, y_train)
+    y_train_pred = modelo.predict(X_train)
+
+    # Métricas en escala logarítmica
+    r2 = modelo.score(X_train, y_train)
+    n = len(y_train)
+    p = X_train.shape[1]
+    r2_adj = 1 - (1 - r2) * (n - 1) / (n - p - 1)
+    rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+
+    resultados.append({
+        "Banda": banda,
+        "R2_log": round(r2, 4),
+        "R2_ajustado_log": round(r2_adj, 4),
+        "RMSE_log": round(rmse, 4)
+    })
+
+# Convertir a DataFrame y ordenar
+df_resultados = pd.DataFrame(resultados) \
+    .sort_values("R2_log", ascending=False) \
+    .reset_index(drop=True)
+
+# Mostrar tabla de resultados
+print("Tabla de regresión lineal sobre variables log-transformadas:")
+display(df_resultados)
+
+```
+
+**Mejora con respecto al modelo lineal original:**
+
+- Las bandas B05, B07, B08 y B06 muestran ahora un R² (log) entre 0.25 y 0.26, un aumento relativo frente al R² original (~0.16–0.17).
+- El RMSE (log) ha disminuido hasta ~0.236 para B05, frente al RMSE promedio de ~25 en escala original (equivalente a ~ln-unidades).
+- La relación entre reflectancia y sólidos suspendidos se ajusta un poco mejor tras la transformación log–log, sugiriendo una dependencia multiplicativa o de potencia más que estrictamente lineal.
+
+**Orden de relevancia de las bandas:**
+
+- B05: mejor ajuste (R²_log = 0.2594, RMSE_log = 0.2363).
+- B07 (0.2549) y B08 (0.2500) siguen muy cerca;
+- B06 completa el grupo principal (0.2481).
+Este ranking coincide con el análisis sin log.
+
+**R² ajustado:**
+
+La diferencia entre R²_log y R²_ajustado_log es pequeña (< 0.02) para las bandas con mejor desempeño, lo que indica que el ajuste mejora genuinamente y no es un artefacto por el número de variables.
+
+**Bandas con nulo o negativo R² ajustado:**
+
+- B11 y B12 permanecen sin aporte (R²_log = 0), igual que antes.
+- B02 y B01 siguen mostrando R² ajustado negativo, confirmando su irrelevancia en un modelo univariante.
+
+
+### Desarrollo del modelo
+
+Nunca una sola banda explicó mucho (> 0.26 de R²_log), pero quizá muchas juntas sí captan gran parte de la variabilidad.
+
+
+#### Incorporar AIC en la selección de modelo
+
+El AIC penaliza por complejidad y te ayudará a decidir si conviene agregar o quitar bandas.
+
+```{python}
+#|code-fold: true
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# Cargar datos
+datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+
+# Detectar columnas de bandas
+bandas = [col for col in datos.columns if col.startswith("B")]
+
+# Lista para guardar resultados
+resultados = []
+
+for banda in bandas:
+    # Log‑transform (evitando ceros)
+    X = np.log(datos[[banda]].replace(0, np.nan)).dropna()
+    y = np.log(datos.loc[X.index, "sol_sus"].replace(0, np.nan))
+    
+    # División en entrenamiento/prueba
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, shuffle=False
+    )
+
+    # Ajuste de OLS para obtener AIC, R² y R² ajustado
+    Xc = sm.add_constant(X_train)           # añade intercepto
+    modelo = sm.OLS(y_train, Xc).fit()
+
+    # Predicciones de entrenamiento para RMSE
+    y_train_pred = modelo.predict(Xc)
+
+    # Métricas
+    r2     = modelo.rsquared
+    r2_adj = modelo.rsquared_adj
+    mse    = mean_squared_error(y_train, y_train_pred)
+    rmse   = np.sqrt(mse)
+    aic    = modelo.aic
+
+    resultados.append({
+        "Banda":        banda,
+        "R2":       round(r2,     4),
+        "R2_ajustado":  round(r2_adj, 4),
+        "RMSE":     round(rmse,   4),
+        "AIC":          round(aic,    2)
+    })
+
+# Convertir a DataFrame y ordenar por R2_log
+df_resultados = (
+    pd.DataFrame(resultados)
+      .sort_values("R2", ascending=False)
+      .reset_index(drop=True)
+)
+
+# Mostrar tabla de resultados
+print("Tabla de regresión log–log por banda con AIC (statsmodels):")
+display(df_resultados)
+
 ```
