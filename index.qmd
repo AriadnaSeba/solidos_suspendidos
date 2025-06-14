@@ -714,6 +714,7 @@ En resumen, la regresión sobre datos transformados mejora el desempeño predict
 :::
 
 
+
 ### Selección de bandas con AIC y desempeño individual
 
 Para evaluar qué bandas individuales son más relevantes para predecir los sólidos suspendidos, se ajustó un modelo de regresión lineal simple en escala logarítmica para cada banda. Además de calcular el coeficiente de determinación (R²) y el error cuadrático medio (RMSE), se calcula ahora el **AIC (Criterio de Información de Akaike)**, que penaliza la complejidad del modelo. Esto ayuda a decidir si la incorporación de una banda es realmente valiosa o si se está agregando complejidad innecesaria al modelo.
@@ -793,3 +794,5 @@ Este análisis refuerza la idea de que, aunque la relación entre reflectancia y
 :::
 
 
+
+...
