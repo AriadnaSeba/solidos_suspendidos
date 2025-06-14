@@ -176,13 +176,13 @@ En el conjunto de datos del laboratorio `lab_df`, hay múltiples parámetros med
 Filtré el DataFrame para quedarme solo con esas filas, y renombré la columna `valor` como `sol_sus` para que sea más claro en los siguientes pasos.
 
 ```{python}
-# Filtramos solo las filas donde el parámetro es 'sol_sus'
+# Filtrar solo las filas donde el parámetro es 'sol_sus'
 sol_sus_df = lab_df[lab_df["param"] == "sol_sus"]
 
-# Renombramos la columna 'valor' a 'sol_sus' para que tenga sentido en el merge
+# Renombrar la columna 'valor' a 'sol_sus' para que tenga sentido en el merge
 sol_sus_df = sol_sus_df.rename(columns={"valor": "sol_sus"})
 
-# Mostramos para confirmar
+# Mostrar para confirmar
 sol_sus_df.head()
 print("Primeras filas de sol_sus_df:")
 display(sol_sus_df.head())
@@ -205,14 +205,14 @@ display(sol_sus_df.head())
 En este paso, convierto los valores únicos de la columna `banda` (como `B01`, `B02`, etc.) en nombres de columnas. Cada nueva columna contendrá los valores del parámetro `reflect` correspondientes a esa banda en particular. Esta operación se realiza antes de unir con los valores de `sol_sus`, ya que el valor de reflectancia depende de la banda, mientras que `sol_sus` es un dato independiente que se asignará luego por punto, fecha y ubicación.
 
 ```{python}
-# Pivotamos la tabla para que cada banda sea una columna
+# Pivotear la tabla para que cada banda sea una columna
 gis_pivot = gis_df.pivot_table(
     index=['fecha', 'punto', 'pixel', 'latitud', 'longitud'],
     columns='banda',
     values='reflect'
 ).reset_index()
 
-# Eliminamos el nombre del índice de columnas generado por el pivot
+# Eliminar el nombre del índice de columnas generado por el pivot
 gis_pivot.columns.name = None
 
 print("Primeras filas de gis_pivot:")
@@ -224,15 +224,10 @@ display(gis_pivot.head())
 <summary>📄 Nota técnica</summary>
 
 - `pivot_table()` reorganiza el DataFrame convirtiendo los valores de una columna (`banda`) en columnas individuales.
-
 - `index=[...]` define las columnas que se mantendrán como claves (se repetirán por fila).
-
 - `columns='banda'` indica qué columna queremos transformar en nombres de columnas.
-
 - `values='reflect'` especifica qué valor colocar en cada celda de la nueva tabla.
-
 - `reset_index()` convierte los índices jerárquicos en columnas normales para facilitar el análisis.
-
 - `columns.name = None` quita la etiqueta "banda" que se agregaría al encabezado por defecto.
 
 </details> 
@@ -245,7 +240,7 @@ display(gis_pivot.head())
 Una vez que las bandas han sido transformadas en columnas, combino esta tabla con los valores de sólidos suspendidos (`sol_sus`) provenientes del laboratorio. La combinación se hace usando las columnas `fecha`, `latitud` y `longitud`, que permiten identificar los datos correspondientes a un mismo punto geográfico y temporal.
 
 ```{python}
-# Realizamos el merge por ubicación y fecha
+# Realizar el merge por ubicación y fecha
 df_merged = pd.merge(
     gis_pivot,
     sol_sus_df[['fecha', 'latitud', 'longitud', 'sol_sus']],
@@ -274,12 +269,13 @@ display(df_merged.head())
 
 :::
 
+
 #### Filtrado espacial por pixel
 
 Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la columna `pixel` para conservar únicamente las filas correspondientes al área geográfica designada como `"3x3"`. Este paso reduce el dominio de análisis y permite concentrarse en una región de estudio concreta.
 
 ```{python}
-# Filtramos solo los datos del pixel 3x3
+# Filtrar solo los datos del pixel 3x3
 df_pixel_3x3 = df_merged[df_merged["pixel"] == "3x3"]
 
 print("Primeras filas del pixel 3x3:")
@@ -327,6 +323,7 @@ df_pixel_3x3.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 
 En este análisis aplico un modelo de regresión lineal simple para estudiar la relación entre la **reflectancia** y los **sólidos suspendidos**, utilizando datos experimentales. La regresión lineal es una técnica fundamental del aprendizaje automático supervisado que nos permite predecir un valor continuo basado en una o más variables independientes. A lo largo de este documento, se explican paso a paso las acciones realizadas y los conceptos clave para comprender y replicar este análisis.
 
+
 #### Importar librerías
 
 En este paso, cargo las bibliotecas necesarias para procesar datos, ajustar modelos de regresión, evaluar su desempeño y visualizar los resultados. 
@@ -362,10 +359,10 @@ import matplotlib.pyplot as plt
 Importo el archivo `.csv` con los datos experimentales. Se visualizan las primeras filas para verificar que los datos se han cargado correctamente.
 
 ```{python}
-# Cargamos el CSV
+# Cargar el CSV
 datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
 
-# Mostramos las primeras filas para verificar
+# Mostrar las primeras filas para verificar
 datos.head()
 print("Primeras filas de datos:")
 display(datos.head())
@@ -410,6 +407,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle
 
 :::
 
+
 #### Entrenar modelo de regresión lineal
 
 En este paso se entrena un modelo de regresión lineal usando los datos de entrenamiento. El modelo aprende la relación matemática entre la reflectancia y los sólidos suspendidos.
@@ -427,6 +425,7 @@ regressor = LinearRegression().fit(X_train, y_train)
 </details>
 
 :::
+
 
 #### Evaluar desempeño del modelo
 
@@ -533,7 +532,7 @@ resultados = []
 
 # Parámetros para organización de gráficos
 n_bandas = len(bandas)
-ncols = 2  # Número de columnas de la grilla
+ncols = 3  # Número de columnas de la grilla
 nrows = math.ceil(n_bandas / ncols)  # Calculamos cuántas filas se necesitan
 
 # Crear figura
@@ -594,6 +593,7 @@ display(df_resultados)
 
 
 **Calidad del ajuste (R² y R² ajustado):**
+
 - **R² bajo (< 0.20)** en todas las bandas, lo cual indica que **ninguna banda aislada** explica buena parte de la variabilidad de los sólidos suspendidos.
 - **R² ajustado** muy similar a R² en las bandas con mejor desempeño (B08, B07, B05, B06), y **negativo** en las bandas con R² casi nulo (B03, B02, B01, B12, B11).  
 - **Un R² ajustado negativo** implica que usar la media de la variable (sin modelo) sería más eficaz que la regresión lineal simple.
@@ -617,6 +617,7 @@ display(df_resultados)
 
 4. **Validación cruzada**  
    Implementar **k‑fold cross‑validation** para obtener métricas más robustas y evitar sobreajuste.
+
 
 
 #### Análisis de regresión por banda aplicando logaritmo a las variables
@@ -676,6 +677,7 @@ print("Tabla de regresión lineal sobre variables log-transformadas:")
 display(df_resultados)
 
 ```
+
 
 **Mejora con respecto al modelo lineal original:**
 
