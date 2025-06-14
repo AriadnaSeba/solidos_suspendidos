@@ -121,7 +121,6 @@ El aprendizaje automático es esencial para mejorar la precisión y rapidez en e
 
 
 
-
 ## Desarrollo del modelo con **Python**
 
 
@@ -795,4 +794,3 @@ Este análisis refuerza la idea de que, aunque la relación entre reflectancia y
 
 
 
-...

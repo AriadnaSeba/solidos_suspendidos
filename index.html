@@ -2349,12 +2349,12 @@ window.Quarto = {
   <li><a href="#métodos-tradicionales" id="toc-métodos-tradicionales" class="nav-link" data-scroll-target="#métodos-tradicionales"><span class="header-section-number">1.1</span> Métodos tradicionales</a></li>
   <li><a href="#métodos-de-aprendizaje-automático" id="toc-métodos-de-aprendizaje-automático" class="nav-link" data-scroll-target="#métodos-de-aprendizaje-automático"><span class="header-section-number">1.2</span> Métodos de aprendizaje automático</a></li>
   </ul></li>
-  <li><a href="#python-con-sklearn" id="toc-python-con-sklearn" class="nav-link" data-scroll-target="#python-con-sklearn"><span class="header-section-number">2</span> <strong>Python</strong>, con <code>sklearn</code></a>
+  <li><a href="#desarrollo-del-modelo-con-python" id="toc-desarrollo-del-modelo-con-python" class="nav-link" data-scroll-target="#desarrollo-del-modelo-con-python"><span class="header-section-number">2</span> Desarrollo del modelo con <strong>Python</strong></a>
   <ul class="collapse">
   <li><a href="#procesamiento-de-datos" id="toc-procesamiento-de-datos" class="nav-link" data-scroll-target="#procesamiento-de-datos"><span class="header-section-number">2.1</span> Procesamiento de datos</a></li>
   <li><a href="#análisis-de-regresión-lineal" id="toc-análisis-de-regresión-lineal" class="nav-link" data-scroll-target="#análisis-de-regresión-lineal"><span class="header-section-number">2.2</span> Análisis de Regresión Lineal</a></li>
   <li><a href="#análisis-de-regresión-por-banda" id="toc-análisis-de-regresión-por-banda" class="nav-link" data-scroll-target="#análisis-de-regresión-por-banda"><span class="header-section-number">2.3</span> Análisis de regresión por banda</a></li>
-  <li><a href="#desarrollo-del-modelo" id="toc-desarrollo-del-modelo" class="nav-link" data-scroll-target="#desarrollo-del-modelo"><span class="header-section-number">2.4</span> Desarrollo del modelo</a></li>
+  <li><a href="#análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables" id="toc-análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables" class="nav-link" data-scroll-target="#análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables"><span class="header-section-number">2.4</span> Análisis de regresión por banda aplicando logaritmo a las variables</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -2537,8 +2537,8 @@ Tabla 2: Características principales de algoritmos de aprendizaje automático 
 </div>
 </section>
 </section>
-<section id="python-con-sklearn" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="python-con-sklearn"><span class="header-section-number">2</span> <strong>Python</strong>, con <code>sklearn</code></h2>
+<section id="desarrollo-del-modelo-con-python" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="desarrollo-del-modelo-con-python"><span class="header-section-number">2</span> Desarrollo del modelo con <strong>Python</strong></h2>
 <section id="procesamiento-de-datos" class="level3" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="procesamiento-de-datos"><span class="header-section-number">2.1</span> Procesamiento de datos</h3>
 <p>Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada con el objetivo de analizar el comportamiento del parámetro <strong>sólidos suspendidos (sol_sus)</strong> en una región específica (pixel <code>3x3</code>). Para esto, utilicé el lenguaje Python y la biblioteca <code>pandas</code>, que resulta particularmente eficiente para el manejo de estructuras tabulares.</p>
@@ -2551,7 +2551,7 @@ Tabla 2: Características principales de algoritmos de aprendizaje automático 
 <li><code>lab_df</code>: contiene datos de laboratorio, incluyendo el parámetro de interés <code>sol_sus</code>.</li>
 </ul>
 <p>Verifico la carga correcta mostrando las primeras filas con la función <code>.head()</code>. Es útil para ver rápidamente cómo es la estructura del archivo: qué columnas hay, qué tipo de datos, si se cargó bien.</p>
-<div id="482f188b" class="cell" data-execution_count="1">
+<div id="88a20382" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd  <span class="co"># pandas es la biblioteca para manejar datos tabulares</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Cargar los archivos de datos</span></span>
@@ -2726,7 +2726,7 @@ Primeras filas de lab_df:</code></pre>
 <h4 data-number="2.1.2" class="anchored" data-anchor-id="filtrar-el-parámetro-sol_sus"><span class="header-section-number">2.1.2</span> Filtrar el parámetro ‘sol_sus’</h4>
 <p>En el conjunto de datos del laboratorio <code>lab_df</code>, hay múltiples parámetros medidos (como pH, turbidez, etc.). En este caso, me interesa trabajar solamente con los datos de <strong>sólidos suspendidos</strong>, identificado como <code>&quot;sol_sus&quot;</code> en la columna <code>param</code>. Este filtrado selectivo lo realicé para limitar el análisis al fenómeno físico-químico de interés.</p>
 <p>Filtré el DataFrame para quedarme solo con esas filas, y renombré la columna <code>valor</code> como <code>sol_sus</code> para que sea más claro en los siguientes pasos.</p>
-<div id="50ba61ba" class="cell" data-execution_count="2">
+<div id="f80999f5" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filtrar solo las filas donde el parámetro es &#39;sol_sus&#39;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sol_sus_df <span class="op">=</span> lab_df[lab_df[<span class="st">&quot;param&quot;</span>] <span class="op">==</span> <span class="st">&quot;sol_sus&quot;</span>]</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -2818,7 +2818,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="transformar-la-columna-banda-en-columnas-individuales" class="level4" data-number="2.1.3">
 <h4 data-number="2.1.3" class="anchored" data-anchor-id="transformar-la-columna-banda-en-columnas-individuales"><span class="header-section-number">2.1.3</span> Transformar la columna banda en columnas individuales</h4>
 <p>En este paso, convierto los valores únicos de la columna <code>banda</code> (como <code>B01</code>, <code>B02</code>, etc.) en nombres de columnas. Cada nueva columna contendrá los valores del parámetro <code>reflect</code> correspondientes a esa banda en particular. Esta operación se realiza antes de unir con los valores de <code>sol_sus</code>, ya que el valor de reflectancia depende de la banda, mientras que <code>sol_sus</code> es un dato independiente que se asignará luego por punto, fecha y ubicación.</p>
-<div id="70259b1e" class="cell" data-execution_count="3">
+<div id="8b39bd64" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pivotear la tabla para que cada banda sea una columna</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>gis_pivot <span class="op">=</span> gis_df.pivot_table(</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span>[<span class="st">&#39;fecha&#39;</span>, <span class="st">&#39;punto&#39;</span>, <span class="st">&#39;pixel&#39;</span>, <span class="st">&#39;latitud&#39;</span>, <span class="st">&#39;longitud&#39;</span>],</span>
@@ -2981,7 +2981,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="combinar-datos-geoespaciales-y-de-laboratorio" class="level4" data-number="2.1.4">
 <h4 data-number="2.1.4" class="anchored" data-anchor-id="combinar-datos-geoespaciales-y-de-laboratorio"><span class="header-section-number">2.1.4</span> Combinar datos geoespaciales y de laboratorio</h4>
 <p>Una vez que las bandas han sido transformadas en columnas, combino esta tabla con los valores de sólidos suspendidos (<code>sol_sus</code>) provenientes del laboratorio. La combinación se hace usando las columnas <code>fecha</code>, <code>latitud</code> y <code>longitud</code>, que permiten identificar los datos correspondientes a un mismo punto geográfico y temporal.</p>
-<div id="04cea059" class="cell" data-execution_count="4">
+<div id="5f3a18b1" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Realizar el merge por ubicación y fecha</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df_merged <span class="op">=</span> pd.merge(</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    gis_pivot,</span>
@@ -3159,7 +3159,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="filtrado-espacial-por-pixel" class="level4" data-number="2.1.5">
 <h4 data-number="2.1.5" class="anchored" data-anchor-id="filtrado-espacial-por-pixel"><span class="header-section-number">2.1.5</span> Filtrado espacial por pixel</h4>
 <p>Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la columna <code>pixel</code> para conservar únicamente las filas correspondientes al área geográfica designada como <code>&quot;3x3&quot;</code>. Este paso reduce el dominio de análisis y permite concentrarse en una región de estudio concreta.</p>
-<div id="da929b39" class="cell" data-execution_count="5">
+<div id="a8404dfe" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filtrar solo los datos del pixel 3x3</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df_pixel_3x3 <span class="op">=</span> df_merged[df_merged[<span class="st">&quot;pixel&quot;</span>] <span class="op">==</span> <span class="st">&quot;3x3&quot;</span>]</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3318,7 +3318,7 @@ Primeras filas de lab_df:</code></pre>
 <h4 data-number="2.1.6" class="anchored" data-anchor-id="guardar-el-archivo-final"><span class="header-section-number">2.1.6</span> Guardar el archivo final</h4>
 <p>Finalmente, guardo el resultado como un nuevo archivo .csv dentro de la carpeta datos.</p>
 <p>Por último, exporto el resultado a un nuevo archivo en formato <code>.csv</code>, mediante la función <code>to_csv()</code> de pandas, con el parámetro <code>index=False</code> para evitar que la columna de índice se incluya en el archivo de salida que pandas crea por defecto. Esto me permite utilizarlo después para visualización o análisis posterior.</p>
-<div id="7e672ad5" class="cell" data-execution_count="6">
+<div id="2291f86e" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Guardar el archivo CSV dentro de la carpeta &quot;datos&quot;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>df_pixel_3x3.to_csv(<span class="st">&#39;datos/datos_sol_sus_pixel_3x3.csv&#39;</span>, index<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -3342,7 +3342,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="importar-librerías" class="level4" data-number="2.2.1">
 <h4 data-number="2.2.1" class="anchored" data-anchor-id="importar-librerías"><span class="header-section-number">2.2.1</span> Importar librerías</h4>
 <p>En este paso, cargo las bibliotecas necesarias para procesar datos, ajustar modelos de regresión, evaluar su desempeño y visualizar los resultados.</p>
-<div id="9344b199" class="cell" data-execution_count="7">
+<div id="56cb79d5" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LinearRegression</span>
@@ -3375,7 +3375,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="cargar-datos-desde-un-csv" class="level4" data-number="2.2.2">
 <h4 data-number="2.2.2" class="anchored" data-anchor-id="cargar-datos-desde-un-csv"><span class="header-section-number">2.2.2</span> Cargar datos desde un CSV</h4>
 <p>Importo el archivo <code>.csv</code> con los datos experimentales. Se visualizan las primeras filas para verificar que los datos se han cargado correctamente.</p>
-<div id="7895a726" class="cell" data-execution_count="8">
+<div id="1ee2b174" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cargar el CSV</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>datos <span class="op">=</span> pd.read_csv(<span class="st">&#39;datos/datos_sol_sus_pixel_3x3.csv&#39;</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3537,7 +3537,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="seleccionar-variables-y-dividir-en-conjuntos" class="level4" data-number="2.2.3">
 <h4 data-number="2.2.3" class="anchored" data-anchor-id="seleccionar-variables-y-dividir-en-conjuntos"><span class="header-section-number">2.2.3</span> Seleccionar variables y dividir en conjuntos</h4>
 <p>Selecciono las variables relevantes: <code>B01</code> como variable independiente y <code>sol_sus</code> como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.</p>
-<div id="62e1a285" class="cell" data-execution_count="9">
+<div id="49589bb3" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Selección de variables</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> datos[[<span class="st">&quot;B01&quot;</span>]]</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> datos[<span class="st">&quot;sol_sus&quot;</span>]</span>
@@ -3565,7 +3565,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="entrenar-modelo-de-regresión-lineal" class="level4" data-number="2.2.4">
 <h4 data-number="2.2.4" class="anchored" data-anchor-id="entrenar-modelo-de-regresión-lineal"><span class="header-section-number">2.2.4</span> Entrenar modelo de regresión lineal</h4>
 <p>En este paso se entrena un modelo de regresión lineal usando los datos de entrenamiento. El modelo aprende la relación matemática entre la reflectancia y los sólidos suspendidos.</p>
-<div id="6474b74b" class="cell" data-execution_count="10">
+<div id="ac3a51c0" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>regressor <span class="op">=</span> LinearRegression().fit(X_train, y_train)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="dropdown">
@@ -3582,7 +3582,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="evaluar-desempeño-del-modelo" class="level4" data-number="2.2.5">
 <h4 data-number="2.2.5" class="anchored" data-anchor-id="evaluar-desempeño-del-modelo"><span class="header-section-number">2.2.5</span> Evaluar desempeño del modelo</h4>
 <p>Una vez entrenado el modelo, evaluo su desempeño usando métricas estadísticas. Estas nos permiten cuantificar qué tan bien el modelo predice los valores de sólidos suspendidos a partir de la reflectancia en los datos de prueba.</p>
-<div id="44372556" class="cell" data-execution_count="11">
+<div id="ba2f831c" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>y_pred <span class="op">=</span> regressor.predict(X_test)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>p_rmse <span class="op">=</span> mean_squared_error(y_test, y_pred)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>p_r2 <span class="op">=</span> r2_score(y_test, y_pred)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3597,7 +3597,7 @@ Métricas de desempeño
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<div id="845497d4" class="cell" data-execution_count="12">
+<div id="e51edeaa" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-stdout">
 <pre><code>El error cuadrático medio es: 1165.037
 El coeficiente de determinación (R²) es: -3.422</code></pre>
@@ -3625,7 +3625,7 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 <section id="visualizar-el-modelo" class="level4" data-number="2.2.6">
 <h4 data-number="2.2.6" class="anchored" data-anchor-id="visualizar-el-modelo"><span class="header-section-number">2.2.6</span> Visualizar el modelo</h4>
 <p>Finalmente, se visualiza gráficamente la relación entre reflectancia y sólidos suspendidos, tanto en el conjunto de entrenamiento como en el de prueba. Esto ayuda a interpretar de forma visual cómo se ajusta el modelo a los datos reales.</p>
-<div id="e93fc0ae" class="cell" data-execution_count="13">
+<div id="0cb29d46" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>), sharex<span class="op">=</span><span class="va">True</span>, sharey<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Gráfico entrenamiento</span></span>
@@ -3684,7 +3684,7 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 <section id="análisis-de-regresión-por-banda" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="análisis-de-regresión-por-banda"><span class="header-section-number">2.3</span> Análisis de regresión por banda</h3>
 <p>Con el objetivo de profundizar el análisis, se evalúa la relación entre los sólidos suspendidos y cada una de las bandas espectrales disponibles de forma individual. Para ello, se entrena un modelo de regresión lineal simple por cada banda, utilizando los mismos datos experimentales. Este enfoque permite comparar el desempeño predictivo de cada banda por separado mediante métricas como el coeficiente de determinación R², su versión ajustada y el error cuadrático medio (RMSE).</p>
-<div id="b2538819" class="cell" data-execution_count="14">
+<div id="d1de50a4" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Código</summary>
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -3777,81 +3777,81 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 <style type="text/css">
 </style>
 
-<table id="T_dbb8e" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<table id="T_63f0f" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th id="T_dbb8e_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
-<th id="T_dbb8e_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2</th>
-<th id="T_dbb8e_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado</th>
-<th id="T_dbb8e_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE</th>
+<th id="T_63f0f_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
+<th id="T_63f0f_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2</th>
+<th id="T_63f0f_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado</th>
+<th id="T_63f0f_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_dbb8e_row0_col0" class="data row0 col0">B08</td>
-<td id="T_dbb8e_row0_col1" class="data row0 col1">0.173200</td>
-<td id="T_dbb8e_row0_col2" class="data row0 col2">0.151500</td>
-<td id="T_dbb8e_row0_col3" class="data row0 col3">25.012100</td>
+<td id="T_63f0f_row0_col0" class="data row0 col0">B08</td>
+<td id="T_63f0f_row0_col1" class="data row0 col1">0.173200</td>
+<td id="T_63f0f_row0_col2" class="data row0 col2">0.151500</td>
+<td id="T_63f0f_row0_col3" class="data row0 col3">25.012100</td>
 </tr>
 <tr class="even">
-<td id="T_dbb8e_row1_col0" class="data row1 col0">B07</td>
-<td id="T_dbb8e_row1_col1" class="data row1 col1">0.171200</td>
-<td id="T_dbb8e_row1_col2" class="data row1 col2">0.149400</td>
-<td id="T_dbb8e_row1_col3" class="data row1 col3">25.042500</td>
+<td id="T_63f0f_row1_col0" class="data row1 col0">B07</td>
+<td id="T_63f0f_row1_col1" class="data row1 col1">0.171200</td>
+<td id="T_63f0f_row1_col2" class="data row1 col2">0.149400</td>
+<td id="T_63f0f_row1_col3" class="data row1 col3">25.042500</td>
 </tr>
 <tr class="odd">
-<td id="T_dbb8e_row2_col0" class="data row2 col0">B05</td>
-<td id="T_dbb8e_row2_col1" class="data row2 col1">0.167800</td>
-<td id="T_dbb8e_row2_col2" class="data row2 col2">0.145900</td>
-<td id="T_dbb8e_row2_col3" class="data row2 col3">25.094900</td>
+<td id="T_63f0f_row2_col0" class="data row2 col0">B05</td>
+<td id="T_63f0f_row2_col1" class="data row2 col1">0.167800</td>
+<td id="T_63f0f_row2_col2" class="data row2 col2">0.145900</td>
+<td id="T_63f0f_row2_col3" class="data row2 col3">25.094900</td>
 </tr>
 <tr class="even">
-<td id="T_dbb8e_row3_col0" class="data row3 col0">B06</td>
-<td id="T_dbb8e_row3_col1" class="data row3 col1">0.165500</td>
-<td id="T_dbb8e_row3_col2" class="data row3 col2">0.143600</td>
-<td id="T_dbb8e_row3_col3" class="data row3 col3">25.128400</td>
+<td id="T_63f0f_row3_col0" class="data row3 col0">B06</td>
+<td id="T_63f0f_row3_col1" class="data row3 col1">0.165500</td>
+<td id="T_63f0f_row3_col2" class="data row3 col2">0.143600</td>
+<td id="T_63f0f_row3_col3" class="data row3 col3">25.128400</td>
 </tr>
 <tr class="odd">
-<td id="T_dbb8e_row4_col0" class="data row4 col0">B04</td>
-<td id="T_dbb8e_row4_col1" class="data row4 col1">0.122100</td>
-<td id="T_dbb8e_row4_col2" class="data row4 col2">0.099000</td>
-<td id="T_dbb8e_row4_col3" class="data row4 col3">25.773800</td>
+<td id="T_63f0f_row4_col0" class="data row4 col0">B04</td>
+<td id="T_63f0f_row4_col1" class="data row4 col1">0.122100</td>
+<td id="T_63f0f_row4_col2" class="data row4 col2">0.099000</td>
+<td id="T_63f0f_row4_col3" class="data row4 col3">25.773800</td>
 </tr>
 <tr class="even">
-<td id="T_dbb8e_row5_col0" class="data row5 col0">B8A</td>
-<td id="T_dbb8e_row5_col1" class="data row5 col1">0.106800</td>
-<td id="T_dbb8e_row5_col2" class="data row5 col2">0.083300</td>
-<td id="T_dbb8e_row5_col3" class="data row5 col3">25.998300</td>
+<td id="T_63f0f_row5_col0" class="data row5 col0">B8A</td>
+<td id="T_63f0f_row5_col1" class="data row5 col1">0.106800</td>
+<td id="T_63f0f_row5_col2" class="data row5 col2">0.083300</td>
+<td id="T_63f0f_row5_col3" class="data row5 col3">25.998300</td>
 </tr>
 <tr class="odd">
-<td id="T_dbb8e_row6_col0" class="data row6 col0">B03</td>
-<td id="T_dbb8e_row6_col1" class="data row6 col1">0.023100</td>
-<td id="T_dbb8e_row6_col2" class="data row6 col2">-0.002600</td>
-<td id="T_dbb8e_row6_col3" class="data row6 col3">27.188700</td>
+<td id="T_63f0f_row6_col0" class="data row6 col0">B03</td>
+<td id="T_63f0f_row6_col1" class="data row6 col1">0.023100</td>
+<td id="T_63f0f_row6_col2" class="data row6 col2">-0.002600</td>
+<td id="T_63f0f_row6_col3" class="data row6 col3">27.188700</td>
 </tr>
 <tr class="even">
-<td id="T_dbb8e_row7_col0" class="data row7 col0">B02</td>
-<td id="T_dbb8e_row7_col1" class="data row7 col1">0.011600</td>
-<td id="T_dbb8e_row7_col2" class="data row7 col2">-0.014400</td>
-<td id="T_dbb8e_row7_col3" class="data row7 col3">27.347700</td>
+<td id="T_63f0f_row7_col0" class="data row7 col0">B02</td>
+<td id="T_63f0f_row7_col1" class="data row7 col1">0.011600</td>
+<td id="T_63f0f_row7_col2" class="data row7 col2">-0.014400</td>
+<td id="T_63f0f_row7_col3" class="data row7 col3">27.347700</td>
 </tr>
 <tr class="odd">
-<td id="T_dbb8e_row8_col0" class="data row8 col0">B01</td>
-<td id="T_dbb8e_row8_col1" class="data row8 col1">0.009800</td>
-<td id="T_dbb8e_row8_col2" class="data row8 col2">-0.016300</td>
-<td id="T_dbb8e_row8_col3" class="data row8 col3">27.373200</td>
+<td id="T_63f0f_row8_col0" class="data row8 col0">B01</td>
+<td id="T_63f0f_row8_col1" class="data row8 col1">0.009800</td>
+<td id="T_63f0f_row8_col2" class="data row8 col2">-0.016300</td>
+<td id="T_63f0f_row8_col3" class="data row8 col3">27.373200</td>
 </tr>
 <tr class="even">
-<td id="T_dbb8e_row9_col0" class="data row9 col0">B12</td>
-<td id="T_dbb8e_row9_col1" class="data row9 col1">0.000600</td>
-<td id="T_dbb8e_row9_col2" class="data row9 col2">-0.025700</td>
-<td id="T_dbb8e_row9_col3" class="data row9 col3">27.499900</td>
+<td id="T_63f0f_row9_col0" class="data row9 col0">B12</td>
+<td id="T_63f0f_row9_col1" class="data row9 col1">0.000600</td>
+<td id="T_63f0f_row9_col2" class="data row9 col2">-0.025700</td>
+<td id="T_63f0f_row9_col3" class="data row9 col3">27.499900</td>
 </tr>
 <tr class="odd">
-<td id="T_dbb8e_row10_col0" class="data row10 col0">B11</td>
-<td id="T_dbb8e_row10_col1" class="data row10 col1">0.000300</td>
-<td id="T_dbb8e_row10_col2" class="data row10 col2">-0.026000</td>
-<td id="T_dbb8e_row10_col3" class="data row10 col3">27.503600</td>
+<td id="T_63f0f_row10_col0" class="data row10 col0">B11</td>
+<td id="T_63f0f_row10_col1" class="data row10 col1">0.000300</td>
+<td id="T_63f0f_row10_col2" class="data row10 col2">-0.026000</td>
+<td id="T_63f0f_row10_col3" class="data row10 col3">27.503600</td>
 </tr>
 </tbody>
 </table>
@@ -3883,9 +3883,17 @@ Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas 
 </ol>
 </div>
 </div>
-<section id="análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables" class="level4" data-number="2.3.1">
-<h4 data-number="2.3.1" class="anchored" data-anchor-id="análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables"><span class="header-section-number">2.3.1</span> Análisis de regresión por banda aplicando logaritmo a las variables</h4>
-<div id="513e2177" class="cell" data-execution_count="15">
+</section>
+<section id="análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables"><span class="header-section-number">2.4</span> Análisis de regresión por banda aplicando logaritmo a las variables</h3>
+<p>En esta etapa del análisis, aplico una transformación logarítmica natural a las variables de reflectancia y sólidos suspendidos antes de ajustar los modelos de regresión lineal. Esta transformación es útil para:</p>
+<ul>
+<li><p>Estabilizar la varianza y reducir la heterocedasticidad.</p></li>
+<li><p>Linealizar relaciones no lineales entre variables.</p></li>
+<li><p>Evitar que valores extremos influyan excesivamente en el modelo.</p></li>
+</ul>
+<p>El procedimiento es similar al análisis anterior, pero antes de entrenar el modelo se aplica <code>log(x)</code> a las columnas correspondientes. Para evitar problemas con ceros en los datos, estos se reemplazan por <code>NaN</code> y se eliminan del análisis.</p>
+<div id="3e1f3ff2" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Código</summary>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -3947,114 +3955,125 @@ Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas 
 <style type="text/css">
 </style>
 
-<table id="T_247f0" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<table id="T_7ac2a" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th id="T_247f0_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
-<th id="T_247f0_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2_log</th>
-<th id="T_247f0_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado_log</th>
-<th id="T_247f0_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE_log</th>
+<th id="T_7ac2a_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
+<th id="T_7ac2a_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2_log</th>
+<th id="T_7ac2a_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado_log</th>
+<th id="T_7ac2a_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE_log</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_247f0_row0_col0" class="data row0 col0">B05</td>
-<td id="T_247f0_row0_col1" class="data row0 col1">0.259400</td>
-<td id="T_247f0_row0_col2" class="data row0 col2">0.240000</td>
-<td id="T_247f0_row0_col3" class="data row0 col3">0.236300</td>
+<td id="T_7ac2a_row0_col0" class="data row0 col0">B05</td>
+<td id="T_7ac2a_row0_col1" class="data row0 col1">0.259400</td>
+<td id="T_7ac2a_row0_col2" class="data row0 col2">0.240000</td>
+<td id="T_7ac2a_row0_col3" class="data row0 col3">0.236300</td>
 </tr>
 <tr class="even">
-<td id="T_247f0_row1_col0" class="data row1 col0">B07</td>
-<td id="T_247f0_row1_col1" class="data row1 col1">0.254900</td>
-<td id="T_247f0_row1_col2" class="data row1 col2">0.235300</td>
-<td id="T_247f0_row1_col3" class="data row1 col3">0.237000</td>
+<td id="T_7ac2a_row1_col0" class="data row1 col0">B07</td>
+<td id="T_7ac2a_row1_col1" class="data row1 col1">0.254900</td>
+<td id="T_7ac2a_row1_col2" class="data row1 col2">0.235300</td>
+<td id="T_7ac2a_row1_col3" class="data row1 col3">0.237000</td>
 </tr>
 <tr class="odd">
-<td id="T_247f0_row2_col0" class="data row2 col0">B08</td>
-<td id="T_247f0_row2_col1" class="data row2 col1">0.250000</td>
-<td id="T_247f0_row2_col2" class="data row2 col2">0.230200</td>
-<td id="T_247f0_row2_col3" class="data row2 col3">0.237800</td>
+<td id="T_7ac2a_row2_col0" class="data row2 col0">B08</td>
+<td id="T_7ac2a_row2_col1" class="data row2 col1">0.250000</td>
+<td id="T_7ac2a_row2_col2" class="data row2 col2">0.230200</td>
+<td id="T_7ac2a_row2_col3" class="data row2 col3">0.237800</td>
 </tr>
 <tr class="even">
-<td id="T_247f0_row3_col0" class="data row3 col0">B06</td>
-<td id="T_247f0_row3_col1" class="data row3 col1">0.248100</td>
-<td id="T_247f0_row3_col2" class="data row3 col2">0.228300</td>
-<td id="T_247f0_row3_col3" class="data row3 col3">0.238100</td>
+<td id="T_7ac2a_row3_col0" class="data row3 col0">B06</td>
+<td id="T_7ac2a_row3_col1" class="data row3 col1">0.248100</td>
+<td id="T_7ac2a_row3_col2" class="data row3 col2">0.228300</td>
+<td id="T_7ac2a_row3_col3" class="data row3 col3">0.238100</td>
 </tr>
 <tr class="odd">
-<td id="T_247f0_row4_col0" class="data row4 col0">B04</td>
-<td id="T_247f0_row4_col1" class="data row4 col1">0.191800</td>
-<td id="T_247f0_row4_col2" class="data row4 col2">0.170500</td>
-<td id="T_247f0_row4_col3" class="data row4 col3">0.246900</td>
+<td id="T_7ac2a_row4_col0" class="data row4 col0">B04</td>
+<td id="T_7ac2a_row4_col1" class="data row4 col1">0.191800</td>
+<td id="T_7ac2a_row4_col2" class="data row4 col2">0.170500</td>
+<td id="T_7ac2a_row4_col3" class="data row4 col3">0.246900</td>
 </tr>
 <tr class="even">
-<td id="T_247f0_row5_col0" class="data row5 col0">B8A</td>
-<td id="T_247f0_row5_col1" class="data row5 col1">0.154600</td>
-<td id="T_247f0_row5_col2" class="data row5 col2">0.132300</td>
-<td id="T_247f0_row5_col3" class="data row5 col3">0.252500</td>
+<td id="T_7ac2a_row5_col0" class="data row5 col0">B8A</td>
+<td id="T_7ac2a_row5_col1" class="data row5 col1">0.154600</td>
+<td id="T_7ac2a_row5_col2" class="data row5 col2">0.132300</td>
+<td id="T_7ac2a_row5_col3" class="data row5 col3">0.252500</td>
 </tr>
 <tr class="odd">
-<td id="T_247f0_row6_col0" class="data row6 col0">B03</td>
-<td id="T_247f0_row6_col1" class="data row6 col1">0.036500</td>
-<td id="T_247f0_row6_col2" class="data row6 col2">0.011200</td>
-<td id="T_247f0_row6_col3" class="data row6 col3">0.269500</td>
+<td id="T_7ac2a_row6_col0" class="data row6 col0">B03</td>
+<td id="T_7ac2a_row6_col1" class="data row6 col1">0.036500</td>
+<td id="T_7ac2a_row6_col2" class="data row6 col2">0.011200</td>
+<td id="T_7ac2a_row6_col3" class="data row6 col3">0.269500</td>
 </tr>
 <tr class="even">
-<td id="T_247f0_row7_col0" class="data row7 col0">B02</td>
-<td id="T_247f0_row7_col1" class="data row7 col1">0.015500</td>
-<td id="T_247f0_row7_col2" class="data row7 col2">-0.010400</td>
-<td id="T_247f0_row7_col3" class="data row7 col3">0.272500</td>
+<td id="T_7ac2a_row7_col0" class="data row7 col0">B02</td>
+<td id="T_7ac2a_row7_col1" class="data row7 col1">0.015500</td>
+<td id="T_7ac2a_row7_col2" class="data row7 col2">-0.010400</td>
+<td id="T_7ac2a_row7_col3" class="data row7 col3">0.272500</td>
 </tr>
 <tr class="odd">
-<td id="T_247f0_row8_col0" class="data row8 col0">B01</td>
-<td id="T_247f0_row8_col1" class="data row8 col1">0.008300</td>
-<td id="T_247f0_row8_col2" class="data row8 col2">-0.017800</td>
-<td id="T_247f0_row8_col3" class="data row8 col3">0.273500</td>
+<td id="T_7ac2a_row8_col0" class="data row8 col0">B01</td>
+<td id="T_7ac2a_row8_col1" class="data row8 col1">0.008300</td>
+<td id="T_7ac2a_row8_col2" class="data row8 col2">-0.017800</td>
+<td id="T_7ac2a_row8_col3" class="data row8 col3">0.273500</td>
 </tr>
 <tr class="even">
-<td id="T_247f0_row9_col0" class="data row9 col0">B11</td>
-<td id="T_247f0_row9_col1" class="data row9 col1">0.000000</td>
-<td id="T_247f0_row9_col2" class="data row9 col2">-0.026300</td>
-<td id="T_247f0_row9_col3" class="data row9 col3">0.274600</td>
+<td id="T_7ac2a_row9_col0" class="data row9 col0">B11</td>
+<td id="T_7ac2a_row9_col1" class="data row9 col1">0.000000</td>
+<td id="T_7ac2a_row9_col2" class="data row9 col2">-0.026300</td>
+<td id="T_7ac2a_row9_col3" class="data row9 col3">0.274600</td>
 </tr>
 <tr class="odd">
-<td id="T_247f0_row10_col0" class="data row10 col0">B12</td>
-<td id="T_247f0_row10_col1" class="data row10 col1">0.000000</td>
-<td id="T_247f0_row10_col2" class="data row10 col2">-0.026300</td>
-<td id="T_247f0_row10_col3" class="data row10 col3">0.274600</td>
+<td id="T_7ac2a_row10_col0" class="data row10 col0">B12</td>
+<td id="T_7ac2a_row10_col1" class="data row10 col1">0.000000</td>
+<td id="T_7ac2a_row10_col2" class="data row10 col2">-0.026300</td>
+<td id="T_7ac2a_row10_col3" class="data row10 col3">0.274600</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p><strong>Mejora con respecto al modelo lineal original:</strong></p>
-<ul>
-<li>Las bandas B05, B07, B08 y B06 muestran ahora un R² (log) entre 0.25 y 0.26, un aumento relativo frente al R² original (~0.16–0.17).</li>
-<li>El RMSE (log) ha disminuido hasta ~0.236 para B05, frente al RMSE promedio de ~25 en escala original (equivalente a ~ln-unidades).</li>
-<li>La relación entre reflectancia y sólidos suspendidos se ajusta un poco mejor tras la transformación log–log, sugiriendo una dependencia multiplicativa o de potencia más que estrictamente lineal.</li>
-</ul>
-<p><strong>Orden de relevancia de las bandas:</strong></p>
-<ul>
-<li>B05: mejor ajuste (R²_log = 0.2594, RMSE_log = 0.2363).</li>
-<li>B07 (0.2549) y B08 (0.2500) siguen muy cerca;</li>
-<li>B06 completa el grupo principal (0.2481). Este ranking coincide con el análisis sin log.</li>
-</ul>
-<p><strong>R² ajustado:</strong></p>
-<p>La diferencia entre R²_log y R²_ajustado_log es pequeña (&lt; 0.02) para las bandas con mejor desempeño, lo que indica que el ajuste mejora genuinamente y no es un artefacto por el número de variables.</p>
-<p><strong>Bandas con nulo o negativo R² ajustado:</strong></p>
-<ul>
-<li>B11 y B12 permanecen sin aporte (R²_log = 0), igual que antes.</li>
-<li>B02 y B01 siguen mostrando R² ajustado negativo, confirmando su irrelevancia en un modelo univariante.</li>
-</ul>
-</section>
-</section>
-<section id="desarrollo-del-modelo" class="level3" data-number="2.4">
-<h3 data-number="2.4" class="anchored" data-anchor-id="desarrollo-del-modelo"><span class="header-section-number">2.4</span> Desarrollo del modelo</h3>
-<p>Nunca una sola banda explicó mucho (&gt; 0.26 de R²_log), pero quizá muchas juntas sí captan gran parte de la variabilidad.</p>
-<section id="incorporar-aic-en-la-selección-de-modelo" class="level4" data-number="2.4.1">
-<h4 data-number="2.4.1" class="anchored" data-anchor-id="incorporar-aic-en-la-selección-de-modelo"><span class="header-section-number">2.4.1</span> Incorporar AIC en la selección de modelo</h4>
-<p>El AIC penaliza por complejidad y te ayudará a decidir si conviene agregar o quitar bandas.</p>
-<div id="f51d6eac" class="cell" data-execution_count="16">
+<div class="dropdown">
+<details>
+<summary>
+📄 Nota técnica
+</summary>
+<blockquote class="blockquote">
+<p>La transformación <code>log(x)</code> se usa frecuentemente cuando la relación entre variables es multiplicativa o cuando hay asimetría en la distribución.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>Es fundamental reemplazar ceros por NaN antes de aplicar el logaritmo, ya que <code>log(0)</code> no está definido.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>Las métricas obtenidas (<code>R²</code> y <code>RMSE</code>) se interpretan en la <strong>escala logarítmica y no son directamente</strong> comparables con las obtenidas en la escala original.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>El <code>R² ajustado</code> penaliza la complejidad del modelo y ayuda a evaluar si el ajuste mejora más allá de lo que se esperaría por azar.</p>
+</blockquote>
+</details>
+<p>:::</p>
+<div class="callout callout-style-default callout-note callout-titled" title="Comparación entre regresión lineal simple y regresión logarítmica">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Comparación entre regresión lineal simple y regresión logarítmica
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Al aplicar una regresión lineal sobre las variables transformadas logarítmicamente, se observa una mejora clara en el ajuste del modelo para las bandas más relevantes. En particular, las bandas B05, B07, B08 y B06 alcanzan valores de R² entre 0.25 y 0.26, lo que representa un aumento significativo respecto a los valores originales, que estaban en torno a 0.16–0.17. Esta mejora también se refleja en el RMSE, que desciende a aproximadamente 0.236 en la escala logarítmica, en contraste con un RMSE promedio cercano a 25 en la escala original.</p>
+<p>La transformación log-log parece capturar de manera más adecuada la relación entre la reflectancia y los sólidos suspendidos, sugiriendo que esta relación es más multiplicativa que estrictamente lineal. Además, el hecho de que el R² ajustado se mantenga cercano al R² simple indica que la mejora en el ajuste no es resultado de una sobreparametrización, sino de una relación más coherente entre las variables.</p>
+<p>El orden de relevancia de las bandas se mantiene prácticamente igual al obtenido en el análisis sin logaritmos: B05 lidera con el mejor ajuste, seguida por B07, B08 y B06. Por otro lado, las bandas B11, B12, B01 y B02 continúan mostrando un desempeño muy pobre, con valores de R² prácticamente nulos o negativos, lo que confirma su escaso aporte predictivo en un modelo univariado.</p>
+<p>En resumen, la regresión sobre datos transformados mejora el desempeño predictivo, pero los niveles de R² siguen siendo relativamente bajos. Esto indica que es necesario avanzar hacia modelos más complejos, como una regresión multivariable que combine varias bandas, o incluso explorar enfoques no lineales. También será importante considerar índices espectrales derivados y aplicar validación cruzada para asegurar la robustez de los resultados.</p>
+</div>
+</div>
+<section id="selección-de-bandas-con-aic-y-desempeño-individual" class="level3" data-number="2.5">
+<h3 data-number="2.5" class="anchored" data-anchor-id="selección-de-bandas-con-aic-y-desempeño-individual"><span class="header-section-number">2.5</span> Selección de bandas con AIC y desempeño individual</h3>
+<p>Para evaluar qué bandas individuales son más relevantes para predecir los sólidos suspendidos, se ajustó un modelo de regresión lineal simple en escala logarítmica para cada banda. Además de calcular el coeficiente de determinación (R²) y el error cuadrático medio (RMSE), se calcula ahora el <strong>AIC (Criterio de Información de Akaike)</strong>, que penaliza la complejidad del modelo. Esto ayuda a decidir si la incorporación de una banda es realmente valiosa o si se está agregando complejidad innecesaria al modelo.</p>
+<div id="7f880ed6" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Código</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -4113,123 +4132,126 @@ Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas 
 <span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar tabla de resultados</span></span>
 <span id="cb25-56"><a href="#cb25-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Tabla de regresión log–log por banda con AIC (statsmodels):&quot;</span>)</span>
-<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>display(df_resultados)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a>display(df_resultados.style.hide(axis<span class="op">=</span><span class="st">&quot;index&quot;</span>))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Tabla de regresión log–log por banda con AIC (statsmodels):</code></pre>
 </div>
 <div class="cell-output cell-output-display">
-<div>
+<style type="text/css">
+</style>
 
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<table id="T_cd052" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">Banda</th>
-<th data-quarto-table-cell-role="th">R2</th>
-<th data-quarto-table-cell-role="th">R2_ajustado</th>
-<th data-quarto-table-cell-role="th">RMSE</th>
-<th data-quarto-table-cell-role="th">AIC</th>
+<th id="T_cd052_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
+<th id="T_cd052_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2</th>
+<th id="T_cd052_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado</th>
+<th id="T_cd052_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE</th>
+<th id="T_cd052_level0_col4" class="col_heading level0 col4" data-quarto-table-cell-role="th">AIC</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>B05</td>
-<td>0.2594</td>
-<td>0.2400</td>
-<td>0.2363</td>
-<td>2.11</td>
+<td id="T_cd052_row0_col0" class="data row0 col0">B05</td>
+<td id="T_cd052_row0_col1" class="data row0 col1">0.259400</td>
+<td id="T_cd052_row0_col2" class="data row0 col2">0.240000</td>
+<td id="T_cd052_row0_col3" class="data row0 col3">0.236300</td>
+<td id="T_cd052_row0_col4" class="data row0 col4">2.110000</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1</td>
-<td>B07</td>
-<td>0.2549</td>
-<td>0.2353</td>
-<td>0.2370</td>
-<td>2.35</td>
+<td id="T_cd052_row1_col0" class="data row1 col0">B07</td>
+<td id="T_cd052_row1_col1" class="data row1 col1">0.254900</td>
+<td id="T_cd052_row1_col2" class="data row1 col2">0.235300</td>
+<td id="T_cd052_row1_col3" class="data row1 col3">0.237000</td>
+<td id="T_cd052_row1_col4" class="data row1 col4">2.350000</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">2</td>
-<td>B08</td>
-<td>0.2500</td>
-<td>0.2302</td>
-<td>0.2378</td>
-<td>2.62</td>
+<td id="T_cd052_row2_col0" class="data row2 col0">B08</td>
+<td id="T_cd052_row2_col1" class="data row2 col1">0.250000</td>
+<td id="T_cd052_row2_col2" class="data row2 col2">0.230200</td>
+<td id="T_cd052_row2_col3" class="data row2 col3">0.237800</td>
+<td id="T_cd052_row2_col4" class="data row2 col4">2.620000</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">3</td>
-<td>B06</td>
-<td>0.2481</td>
-<td>0.2283</td>
-<td>0.2381</td>
-<td>2.72</td>
+<td id="T_cd052_row3_col0" class="data row3 col0">B06</td>
+<td id="T_cd052_row3_col1" class="data row3 col1">0.248100</td>
+<td id="T_cd052_row3_col2" class="data row3 col2">0.228300</td>
+<td id="T_cd052_row3_col3" class="data row3 col3">0.238100</td>
+<td id="T_cd052_row3_col4" class="data row3 col4">2.720000</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">4</td>
-<td>B04</td>
-<td>0.1918</td>
-<td>0.1705</td>
-<td>0.2469</td>
-<td>5.60</td>
+<td id="T_cd052_row4_col0" class="data row4 col0">B04</td>
+<td id="T_cd052_row4_col1" class="data row4 col1">0.191800</td>
+<td id="T_cd052_row4_col2" class="data row4 col2">0.170500</td>
+<td id="T_cd052_row4_col3" class="data row4 col3">0.246900</td>
+<td id="T_cd052_row4_col4" class="data row4 col4">5.600000</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">5</td>
-<td>B8A</td>
-<td>0.1546</td>
-<td>0.1323</td>
-<td>0.2525</td>
-<td>7.40</td>
+<td id="T_cd052_row5_col0" class="data row5 col0">B8A</td>
+<td id="T_cd052_row5_col1" class="data row5 col1">0.154600</td>
+<td id="T_cd052_row5_col2" class="data row5 col2">0.132300</td>
+<td id="T_cd052_row5_col3" class="data row5 col3">0.252500</td>
+<td id="T_cd052_row5_col4" class="data row5 col4">7.400000</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">6</td>
-<td>B03</td>
-<td>0.0365</td>
-<td>0.0112</td>
-<td>0.2695</td>
-<td>12.63</td>
+<td id="T_cd052_row6_col0" class="data row6 col0">B03</td>
+<td id="T_cd052_row6_col1" class="data row6 col1">0.036500</td>
+<td id="T_cd052_row6_col2" class="data row6 col2">0.011200</td>
+<td id="T_cd052_row6_col3" class="data row6 col3">0.269500</td>
+<td id="T_cd052_row6_col4" class="data row6 col4">12.630000</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">7</td>
-<td>B02</td>
-<td>0.0155</td>
-<td>-0.0104</td>
-<td>0.2725</td>
-<td>13.50</td>
+<td id="T_cd052_row7_col0" class="data row7 col0">B02</td>
+<td id="T_cd052_row7_col1" class="data row7 col1">0.015500</td>
+<td id="T_cd052_row7_col2" class="data row7 col2">-0.010400</td>
+<td id="T_cd052_row7_col3" class="data row7 col3">0.272500</td>
+<td id="T_cd052_row7_col4" class="data row7 col4">13.500000</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">8</td>
-<td>B01</td>
-<td>0.0083</td>
-<td>-0.0178</td>
-<td>0.2735</td>
-<td>13.79</td>
+<td id="T_cd052_row8_col0" class="data row8 col0">B01</td>
+<td id="T_cd052_row8_col1" class="data row8 col1">0.008300</td>
+<td id="T_cd052_row8_col2" class="data row8 col2">-0.017800</td>
+<td id="T_cd052_row8_col3" class="data row8 col3">0.273500</td>
+<td id="T_cd052_row8_col4" class="data row8 col4">13.790000</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">9</td>
-<td>B11</td>
-<td>0.0000</td>
-<td>-0.0263</td>
-<td>0.2746</td>
-<td>14.12</td>
+<td id="T_cd052_row9_col0" class="data row9 col0">B11</td>
+<td id="T_cd052_row9_col1" class="data row9 col1">0.000000</td>
+<td id="T_cd052_row9_col2" class="data row9 col2">-0.026300</td>
+<td id="T_cd052_row9_col3" class="data row9 col3">0.274600</td>
+<td id="T_cd052_row9_col4" class="data row9 col4">14.120000</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">10</td>
-<td>B12</td>
-<td>0.0000</td>
-<td>-0.0263</td>
-<td>0.2746</td>
-<td>14.12</td>
+<td id="T_cd052_row10_col0" class="data row10 col0">B12</td>
+<td id="T_cd052_row10_col1" class="data row10 col1">0.000000</td>
+<td id="T_cd052_row10_col2" class="data row10 col2">-0.026300</td>
+<td id="T_cd052_row10_col3" class="data row10 col3">0.274600</td>
+<td id="T_cd052_row10_col4" class="data row10 col4">14.120000</td>
 </tr>
 </tbody>
 </table>
-
 </div>
 </div>
+<div class="callout callout-style-default callout-note callout-titled" title="Evaluación individual de bandas con AIC">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-
+<div class="callout-title-container flex-fill">
+Evaluación individual de bandas con AIC
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>En este contexto, las bandas <strong>B05</strong>, <strong>B07</strong>, <strong>B08</strong> y <strong>B06</strong> no solo muestran los mayores valores de R² logarítmico (entre 0.248 y 0.259), sino que también presentan los <strong>valores más bajos de AIC</strong>, lo que confirma que son candidatas sólidas para construir modelos multivariables. A su vez, los valores de <strong>RMSE en escala logarítmica</strong> siguen siendo consistentes con los obtenidos previamente, en el orden de <strong>0.236 a 0.238</strong>.</p>
+<p>Estos resultados refuerzan lo observado en los análisis anteriores: <strong>ninguna banda aislada logra un ajuste sobresaliente</strong>, pero estas cuatro se destacan claramente del resto tanto por su capacidad explicativa como por su eficiencia según el criterio de información (AIC). El AIC penaliza modelos más complejos, por lo que su bajo valor indica que estos modelos log-log simples son adecuados sin incurrir en sobreajuste.</p>
+<p>En cambio, las bandas <strong>B11</strong>, <strong>B12</strong>, <strong>B01</strong> y <strong>B02</strong> presentan <strong>R² cercanos o iguales a cero</strong>, junto con <strong>AIC altos (≥ 13)</strong>, lo que confirma su escasa utilidad en modelos univariantes, incluso tras transformación logarítmica.</p>
+<p>Este análisis refuerza la idea de que, aunque la relación entre reflectancia y sólidos suspendidos no sea linealmente fuerte en ninguna banda aislada, es posible que una combinación de varias de ellas explique mejor la variabilidad del fenómeno observado. El siguiente paso será construir un modelo multivariado que combine estas bandas con buen desempeño individual y evaluar si, en conjunto, se logra un ajuste más robusto.</p>
+</div>
+</div>
 </section>
+</div>
+
 </section>
 </section>
 
