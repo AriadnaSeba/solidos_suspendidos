@@ -716,8 +716,7 @@ En resumen, la regresión sobre datos transformados mejora el desempeño predict
 
 ### Selección de bandas con AIC y desempeño individual
 
-Aunque ninguna banda por sí sola alcanzó un R² alto, el análisis con `statsmodels` incorporando el criterio AIC nos permite evaluar la utilidad relativa de cada una, teniendo en cuenta tanto la calidad del ajuste como la penalización por complejidad. Los valores de AIC más bajos corresponden a modelos con mejor balance entre ajuste y parsimonia.
-
+Para evaluar qué bandas individuales son más relevantes para predecir los sólidos suspendidos, se ajustó un modelo de regresión lineal simple en escala logarítmica para cada banda. Además de calcular el coeficiente de determinación (R²) y el error cuadrático medio (RMSE), se calcula ahora el **AIC (Criterio de Información de Akaike)**, que penaliza la complejidad del modelo. Esto ayuda a decidir si la incorporación de una banda es realmente valiosa o si se está agregando complejidad innecesaria al modelo.
 
 ```{python}
 #|code-fold: true
