@@ -21,7 +21,7 @@ author:
       - name: GISTAQ (UTN-FRRe)
         url: https://www.instagram.com/gistaq.utn/
 abstract: |
-  Este sitio web contiene cuestiones etc
+  Este sitio web aborda el análisis de sólidos suspendidos totales (SST) en cuerpos de agua mediante el uso de imágenes satelitales y técnicas de aprendizaje automático. Presenta una introducción teórica sobre la importancia de los SST como indicador ambiental y luego desarrolla una parte práctica con Python, donde se integran datos espectrales y mediciones reales para aplicar modelos de regresión. Se evalúa el desempeño de estos modelos y se exploran relaciones entre bandas espectrales y SST, proponiendo mejoras metodológicas para estudios futuros.
 keywords:
   - GISTAQ
   - UTN
@@ -122,7 +122,7 @@ El aprendizaje automático es esencial para mejorar la precisión y rapidez en e
 
 
 
-## **Python**, con `sklearn`
+## Desarrollo del modelo con **Python**
 
 
 ### Procesamiento de datos
@@ -511,6 +511,8 @@ plt.show()
 
 ### Análisis de regresión por banda
 
+Con el objetivo de profundizar el análisis, se evalúa la relación entre los sólidos suspendidos y cada una de las bandas espectrales disponibles de forma individual. Para ello, se entrena un modelo de regresión lineal simple por cada banda, utilizando los mismos datos experimentales. Este enfoque permite comparar el desempeño predictivo de cada banda por separado mediante métricas como el coeficiente de determinación R², su versión ajustada y el error cuadrático medio (RMSE).
+
 ```{python}
 #|code-fold: true
 import pandas as pd
@@ -587,40 +589,47 @@ plt.show()
 # Tabla resumen
 df_resultados = pd.DataFrame(resultados).sort_values("R2", ascending=False).reset_index(drop=True)
 print("Tabla resumen de métricas por banda:")
-display(df_resultados)
+display(df_resultados.style.hide(axis="index"))
 
 ```
 
 
-**Calidad del ajuste (R² y R² ajustado):**
+::: {.callout-note title="Conclusiones del análisis por banda"}
 
-- **R² bajo (< 0.20)** en todas las bandas, lo cual indica que **ninguna banda aislada** explica buena parte de la variabilidad de los sólidos suspendidos.
-- **R² ajustado** muy similar a R² en las bandas con mejor desempeño (B08, B07, B05, B06), y **negativo** en las bandas con R² casi nulo (B03, B02, B01, B12, B11).  
-- **Un R² ajustado negativo** implica que usar la media de la variable (sin modelo) sería más eficaz que la regresión lineal simple.
+Los resultados muestran que, aunque algunas bandas como **B08**, **B07**, **B05** y **B06** presentan un desempeño ligeramente superior al resto, los valores de **R² siguen siendo bajos (< 0.20)**, lo que indica que **ninguna banda individual explica adecuadamente la variabilidad de los sólidos suspendidos**. El **R² ajustado** es similar a R² en las bandas más destacadas, pero se vuelve negativo en aquellas con menor correlación (como B01, B02, B03, B11, B12), lo que sugiere que un modelo basado solo en la media de los datos sería más eficaz que aplicar una regresión lineal simple en esos casos.
 
-**Error de predicción (RMSE):**
+En cuanto al error de predicción, el **RMSE se mantiene en torno a 25 unidades** para las bandas con mejor ajuste, y alcanza valores cercanos a 27.5 en las de menor desempeño, lo que implica que el modelo apenas mejora con respecto a una predicción constante.
 
-- **RMSE ≈ 25** para las cuatro mejores bandas (B08–B06), es decir, el error medio de predicción es de unas 25 unidades de `sol_sus`.  
-- Las bandas con peor R² (B11, B12) presentan **RMSE ≈ 27.5**, casi equivalente a predecir siempre la media.
+Estas observaciones reflejan las limitaciones del enfoque univariable y motivan avanzar hacia estrategias más robustas. Entonces, analizo como siguiente paso explorar:
 
-**Siguientes pasos recomendados:**
+  1. **Regresión multivariable**  
+    Combinar las bandas mejor correlacionadas (por ejemplo, B08, B07, B05, B06) en un único modelo para evaluar si en conjunto mejoran R² y reducen RMSE.
 
-1. **Regresión multivariable**  
-   Combinar las bandas mejor correlacionadas (por ejemplo, B08, B07, B05, B06) en un único modelo para evaluar si en conjunto mejoran R² y reducen RMSE.
+  2. **Modelos no lineales**  
+    Probar algoritmos como **Random Forest**, **SVM** o **Redes Neuronales** para capturar relaciones no lineales o interacciones espectrales.
 
-2. **Modelos no lineales**  
-   Probar algoritmos como **Random Forest**, **SVM** o **Redes Neuronales** para capturar relaciones no lineales o interacciones espectrales.
+  3. **Ingeniería de variables**  
+    Calcular **índices espectrales** (NDVI, índices de turbidez) como combinaciones de bandas.  
+    Aplicar transformaciones (logaritmos, potencias) a las reflectancias o a `sol_sus` para estabilizar la varianza.
 
-3. **Ingeniería de variables**  
-  - Calcular **índices espectrales** (NDVI, índices de turbidez) como combinaciones de bandas.  
-  - Aplicar transformaciones (logaritmos, potencias) a las reflectancias o a `sol_sus` para estabilizar la varianza.
+  4. **Validación cruzada**  
+      Implementar **k‑fold cross‑validation** para obtener métricas más robustas y evitar sobreajuste.
 
-4. **Validación cruzada**  
-   Implementar **k‑fold cross‑validation** para obtener métricas más robustas y evitar sobreajuste.
+:::
 
 
 
-#### Análisis de regresión por banda aplicando logaritmo a las variables
+### Análisis de regresión por banda aplicando logaritmo a las variables
+
+En esta etapa del análisis, aplico una transformación logarítmica natural a las variables de reflectancia y sólidos suspendidos antes de ajustar los modelos de regresión lineal. Esta transformación es útil para:
+
+- Estabilizar la varianza y reducir la heterocedasticidad.
+
+- Linealizar relaciones no lineales entre variables.
+
+- Evitar que valores extremos influyan excesivamente en el modelo.
+
+El procedimiento es similar al análisis anterior, pero antes de entrenar el modelo se aplica `log(x)` a las columnas correspondientes. Para evitar problemas con ceros en los datos, estos se reemplazan por `NaN` y se eliminan del análisis.
 
 ```{python}
 #|code-fold: true
@@ -674,42 +683,41 @@ df_resultados = pd.DataFrame(resultados) \
 
 # Mostrar tabla de resultados
 print("Tabla de regresión lineal sobre variables log-transformadas:")
-display(df_resultados)
-
+display(df_resultados.style.hide(axis="index"))
 ```
 
+::: {.dropdown}
+<details> 
+<summary>📄 Nota técnica</summary>
 
-**Mejora con respecto al modelo lineal original:**
+>La transformación `log(x)` se usa frecuentemente cuando la relación entre variables es multiplicativa o cuando hay asimetría en la distribución.
 
-- Las bandas B05, B07, B08 y B06 muestran ahora un R² (log) entre 0.25 y 0.26, un aumento relativo frente al R² original (~0.16–0.17).
-- El RMSE (log) ha disminuido hasta ~0.236 para B05, frente al RMSE promedio de ~25 en escala original (equivalente a ~ln-unidades).
-- La relación entre reflectancia y sólidos suspendidos se ajusta un poco mejor tras la transformación log–log, sugiriendo una dependencia multiplicativa o de potencia más que estrictamente lineal.
+>Es fundamental reemplazar ceros por NaN antes de aplicar el logaritmo, ya que `log(0)` no está definido.
 
-**Orden de relevancia de las bandas:**
+>Las métricas obtenidas (`R²` y `RMSE`) se interpretan en la **escala logarítmica y no son directamente** comparables con las obtenidas en la escala original.
 
-- B05: mejor ajuste (R²_log = 0.2594, RMSE_log = 0.2363).
-- B07 (0.2549) y B08 (0.2500) siguen muy cerca;
-- B06 completa el grupo principal (0.2481).
-Este ranking coincide con el análisis sin log.
+>El `R² ajustado` penaliza la complejidad del modelo y ayuda a evaluar si el ajuste mejora más allá de lo que se esperaría por azar.
 
-**R² ajustado:**
-
-La diferencia entre R²_log y R²_ajustado_log es pequeña (< 0.02) para las bandas con mejor desempeño, lo que indica que el ajuste mejora genuinamente y no es un artefacto por el número de variables.
-
-**Bandas con nulo o negativo R² ajustado:**
-
-- B11 y B12 permanecen sin aporte (R²_log = 0), igual que antes.
-- B02 y B01 siguen mostrando R² ajustado negativo, confirmando su irrelevancia en un modelo univariante.
+</details> :::
 
 
-### Desarrollo del modelo
+::: {.callout-note title="Comparación entre regresión lineal simple y regresión logarítmica"}
 
-Nunca una sola banda explicó mucho (> 0.26 de R²_log), pero quizá muchas juntas sí captan gran parte de la variabilidad.
+Al aplicar una regresión lineal sobre las variables transformadas logarítmicamente, se observa una mejora clara en el ajuste del modelo para las bandas más relevantes. En particular, las bandas B05, B07, B08 y B06 alcanzan valores de R² entre 0.25 y 0.26, lo que representa un aumento significativo respecto a los valores originales, que estaban en torno a 0.16–0.17. Esta mejora también se refleja en el RMSE, que desciende a aproximadamente 0.236 en la escala logarítmica, en contraste con un RMSE promedio cercano a 25 en la escala original.
+
+La transformación log-log parece capturar de manera más adecuada la relación entre la reflectancia y los sólidos suspendidos, sugiriendo que esta relación es más multiplicativa que estrictamente lineal. Además, el hecho de que el R² ajustado se mantenga cercano al R² simple indica que la mejora en el ajuste no es resultado de una sobreparametrización, sino de una relación más coherente entre las variables.
+
+El orden de relevancia de las bandas se mantiene prácticamente igual al obtenido en el análisis sin logaritmos: B05 lidera con el mejor ajuste, seguida por B07, B08 y B06. Por otro lado, las bandas B11, B12, B01 y B02 continúan mostrando un desempeño muy pobre, con valores de R² prácticamente nulos o negativos, lo que confirma su escaso aporte predictivo en un modelo univariado.
+
+En resumen, la regresión sobre datos transformados mejora el desempeño predictivo, pero los niveles de R² siguen siendo relativamente bajos. Esto indica que es necesario avanzar hacia modelos más complejos, como una regresión multivariable que combine varias bandas, o incluso explorar enfoques no lineales. También será importante considerar índices espectrales derivados y aplicar validación cruzada para asegurar la robustez de los resultados.
+
+:::
 
 
-#### Incorporar AIC en la selección de modelo
+### Selección de bandas con AIC y desempeño individual
 
-El AIC penaliza por complejidad y te ayudará a decidir si conviene agregar o quitar bandas.
+Aunque ninguna banda por sí sola alcanzó un R² alto, el análisis con `statsmodels` incorporando el criterio AIC nos permite evaluar la utilidad relativa de cada una, teniendo en cuenta tanto la calidad del ajuste como la penalización por complejidad. Los valores de AIC más bajos corresponden a modelos con mejor balance entre ajuste y parsimonia.
+
 
 ```{python}
 #|code-fold: true
@@ -769,6 +777,20 @@ df_resultados = (
 
 # Mostrar tabla de resultados
 print("Tabla de regresión log–log por banda con AIC (statsmodels):")
-display(df_resultados)
-
+display(df_resultados.style.hide(axis="index"))
 ```
+
+
+::: {.callout-note title="Evaluación individual de bandas con AIC"}
+
+En este contexto, las bandas **B05**, **B07**, **B08** y **B06** no solo muestran los mayores valores de R² logarítmico (entre 0.248 y 0.259), sino que también presentan los **valores más bajos de AIC**, lo que confirma que son candidatas sólidas para construir modelos multivariables. A su vez, los valores de **RMSE en escala logarítmica** siguen siendo consistentes con los obtenidos previamente, en el orden de **0.236 a 0.238**.
+
+Estos resultados refuerzan lo observado en los análisis anteriores: **ninguna banda aislada logra un ajuste sobresaliente**, pero estas cuatro se destacan claramente del resto tanto por su capacidad explicativa como por su eficiencia según el criterio de información (AIC). El AIC penaliza modelos más complejos, por lo que su bajo valor indica que estos modelos log-log simples son adecuados sin incurrir en sobreajuste.
+
+En cambio, las bandas **B11**, **B12**, **B01** y **B02** presentan **R² cercanos o iguales a cero**, junto con **AIC altos (≥ 13)**, lo que confirma su escasa utilidad en modelos univariantes, incluso tras transformación logarítmica.
+
+Este análisis refuerza la idea de que, aunque la relación entre reflectancia y sólidos suspendidos no sea linealmente fuerte en ninguna banda aislada, es posible que una combinación de varias de ellas explique mejor la variabilidad del fenómeno observado. El siguiente paso será construir un modelo multivariado que combine estas bandas con buen desempeño individual y evaluar si, en conjunto, se logra un ajuste más robusto.
+
+:::
+
+

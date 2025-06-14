@@ -2399,7 +2399,7 @@ window.Quarto = {
 <div>
   <div class="abstract">
     <div class="block-title">Resumen</div>
-    <p>Este sitio web contiene cuestiones etc</p>
+    <p>Este sitio web aborda el análisis de sólidos suspendidos totales (SST) en cuerpos de agua mediante el uso de imágenes satelitales y técnicas de aprendizaje automático. Presenta una introducción teórica sobre la importancia de los SST como indicador ambiental y luego desarrolla una parte práctica con Python, donde se integran datos espectrales y mediciones reales para aplicar modelos de regresión. Se evalúa el desempeño de estos modelos y se exploran relaciones entre bandas espectrales y SST, proponiendo mejoras metodológicas para estudios futuros.</p>
   </div>
 </div>
 
@@ -2551,7 +2551,7 @@ Tabla 2: Características principales de algoritmos de aprendizaje automático 
 <li><code>lab_df</code>: contiene datos de laboratorio, incluyendo el parámetro de interés <code>sol_sus</code>.</li>
 </ul>
 <p>Verifico la carga correcta mostrando las primeras filas con la función <code>.head()</code>. Es útil para ver rápidamente cómo es la estructura del archivo: qué columnas hay, qué tipo de datos, si se cargó bien.</p>
-<div id="aa553686" class="cell" data-execution_count="1">
+<div id="482f188b" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd  <span class="co"># pandas es la biblioteca para manejar datos tabulares</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Cargar los archivos de datos</span></span>
@@ -2726,7 +2726,7 @@ Primeras filas de lab_df:</code></pre>
 <h4 data-number="2.1.2" class="anchored" data-anchor-id="filtrar-el-parámetro-sol_sus"><span class="header-section-number">2.1.2</span> Filtrar el parámetro ‘sol_sus’</h4>
 <p>En el conjunto de datos del laboratorio <code>lab_df</code>, hay múltiples parámetros medidos (como pH, turbidez, etc.). En este caso, me interesa trabajar solamente con los datos de <strong>sólidos suspendidos</strong>, identificado como <code>&quot;sol_sus&quot;</code> en la columna <code>param</code>. Este filtrado selectivo lo realicé para limitar el análisis al fenómeno físico-químico de interés.</p>
 <p>Filtré el DataFrame para quedarme solo con esas filas, y renombré la columna <code>valor</code> como <code>sol_sus</code> para que sea más claro en los siguientes pasos.</p>
-<div id="06d709cb" class="cell" data-execution_count="2">
+<div id="50ba61ba" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filtrar solo las filas donde el parámetro es &#39;sol_sus&#39;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sol_sus_df <span class="op">=</span> lab_df[lab_df[<span class="st">&quot;param&quot;</span>] <span class="op">==</span> <span class="st">&quot;sol_sus&quot;</span>]</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -2818,7 +2818,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="transformar-la-columna-banda-en-columnas-individuales" class="level4" data-number="2.1.3">
 <h4 data-number="2.1.3" class="anchored" data-anchor-id="transformar-la-columna-banda-en-columnas-individuales"><span class="header-section-number">2.1.3</span> Transformar la columna banda en columnas individuales</h4>
 <p>En este paso, convierto los valores únicos de la columna <code>banda</code> (como <code>B01</code>, <code>B02</code>, etc.) en nombres de columnas. Cada nueva columna contendrá los valores del parámetro <code>reflect</code> correspondientes a esa banda en particular. Esta operación se realiza antes de unir con los valores de <code>sol_sus</code>, ya que el valor de reflectancia depende de la banda, mientras que <code>sol_sus</code> es un dato independiente que se asignará luego por punto, fecha y ubicación.</p>
-<div id="e6fc54cd" class="cell" data-execution_count="3">
+<div id="70259b1e" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pivotear la tabla para que cada banda sea una columna</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>gis_pivot <span class="op">=</span> gis_df.pivot_table(</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    index<span class="op">=</span>[<span class="st">&#39;fecha&#39;</span>, <span class="st">&#39;punto&#39;</span>, <span class="st">&#39;pixel&#39;</span>, <span class="st">&#39;latitud&#39;</span>, <span class="st">&#39;longitud&#39;</span>],</span>
@@ -2981,7 +2981,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="combinar-datos-geoespaciales-y-de-laboratorio" class="level4" data-number="2.1.4">
 <h4 data-number="2.1.4" class="anchored" data-anchor-id="combinar-datos-geoespaciales-y-de-laboratorio"><span class="header-section-number">2.1.4</span> Combinar datos geoespaciales y de laboratorio</h4>
 <p>Una vez que las bandas han sido transformadas en columnas, combino esta tabla con los valores de sólidos suspendidos (<code>sol_sus</code>) provenientes del laboratorio. La combinación se hace usando las columnas <code>fecha</code>, <code>latitud</code> y <code>longitud</code>, que permiten identificar los datos correspondientes a un mismo punto geográfico y temporal.</p>
-<div id="08bbacd0" class="cell" data-execution_count="4">
+<div id="04cea059" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Realizar el merge por ubicación y fecha</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df_merged <span class="op">=</span> pd.merge(</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    gis_pivot,</span>
@@ -3159,7 +3159,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="filtrado-espacial-por-pixel" class="level4" data-number="2.1.5">
 <h4 data-number="2.1.5" class="anchored" data-anchor-id="filtrado-espacial-por-pixel"><span class="header-section-number">2.1.5</span> Filtrado espacial por pixel</h4>
 <p>Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la columna <code>pixel</code> para conservar únicamente las filas correspondientes al área geográfica designada como <code>&quot;3x3&quot;</code>. Este paso reduce el dominio de análisis y permite concentrarse en una región de estudio concreta.</p>
-<div id="687f2df5" class="cell" data-execution_count="5">
+<div id="da929b39" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filtrar solo los datos del pixel 3x3</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df_pixel_3x3 <span class="op">=</span> df_merged[df_merged[<span class="st">&quot;pixel&quot;</span>] <span class="op">==</span> <span class="st">&quot;3x3&quot;</span>]</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3318,7 +3318,7 @@ Primeras filas de lab_df:</code></pre>
 <h4 data-number="2.1.6" class="anchored" data-anchor-id="guardar-el-archivo-final"><span class="header-section-number">2.1.6</span> Guardar el archivo final</h4>
 <p>Finalmente, guardo el resultado como un nuevo archivo .csv dentro de la carpeta datos.</p>
 <p>Por último, exporto el resultado a un nuevo archivo en formato <code>.csv</code>, mediante la función <code>to_csv()</code> de pandas, con el parámetro <code>index=False</code> para evitar que la columna de índice se incluya en el archivo de salida que pandas crea por defecto. Esto me permite utilizarlo después para visualización o análisis posterior.</p>
-<div id="c79e463d" class="cell" data-execution_count="6">
+<div id="7e672ad5" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Guardar el archivo CSV dentro de la carpeta &quot;datos&quot;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>df_pixel_3x3.to_csv(<span class="st">&#39;datos/datos_sol_sus_pixel_3x3.csv&#39;</span>, index<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -3342,7 +3342,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="importar-librerías" class="level4" data-number="2.2.1">
 <h4 data-number="2.2.1" class="anchored" data-anchor-id="importar-librerías"><span class="header-section-number">2.2.1</span> Importar librerías</h4>
 <p>En este paso, cargo las bibliotecas necesarias para procesar datos, ajustar modelos de regresión, evaluar su desempeño y visualizar los resultados.</p>
-<div id="a948366b" class="cell" data-execution_count="7">
+<div id="9344b199" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LinearRegression</span>
@@ -3375,7 +3375,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="cargar-datos-desde-un-csv" class="level4" data-number="2.2.2">
 <h4 data-number="2.2.2" class="anchored" data-anchor-id="cargar-datos-desde-un-csv"><span class="header-section-number">2.2.2</span> Cargar datos desde un CSV</h4>
 <p>Importo el archivo <code>.csv</code> con los datos experimentales. Se visualizan las primeras filas para verificar que los datos se han cargado correctamente.</p>
-<div id="23cd8c1c" class="cell" data-execution_count="8">
+<div id="7895a726" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Cargar el CSV</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>datos <span class="op">=</span> pd.read_csv(<span class="st">&#39;datos/datos_sol_sus_pixel_3x3.csv&#39;</span>)</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3537,7 +3537,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="seleccionar-variables-y-dividir-en-conjuntos" class="level4" data-number="2.2.3">
 <h4 data-number="2.2.3" class="anchored" data-anchor-id="seleccionar-variables-y-dividir-en-conjuntos"><span class="header-section-number">2.2.3</span> Seleccionar variables y dividir en conjuntos</h4>
 <p>Selecciono las variables relevantes: <code>B01</code> como variable independiente y <code>sol_sus</code> como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.</p>
-<div id="c26f1037" class="cell" data-execution_count="9">
+<div id="62e1a285" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Selección de variables</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> datos[[<span class="st">&quot;B01&quot;</span>]]</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> datos[<span class="st">&quot;sol_sus&quot;</span>]</span>
@@ -3565,7 +3565,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="entrenar-modelo-de-regresión-lineal" class="level4" data-number="2.2.4">
 <h4 data-number="2.2.4" class="anchored" data-anchor-id="entrenar-modelo-de-regresión-lineal"><span class="header-section-number">2.2.4</span> Entrenar modelo de regresión lineal</h4>
 <p>En este paso se entrena un modelo de regresión lineal usando los datos de entrenamiento. El modelo aprende la relación matemática entre la reflectancia y los sólidos suspendidos.</p>
-<div id="3799350e" class="cell" data-execution_count="10">
+<div id="6474b74b" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>regressor <span class="op">=</span> LinearRegression().fit(X_train, y_train)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="dropdown">
@@ -3582,7 +3582,7 @@ Primeras filas de lab_df:</code></pre>
 <section id="evaluar-desempeño-del-modelo" class="level4" data-number="2.2.5">
 <h4 data-number="2.2.5" class="anchored" data-anchor-id="evaluar-desempeño-del-modelo"><span class="header-section-number">2.2.5</span> Evaluar desempeño del modelo</h4>
 <p>Una vez entrenado el modelo, evaluo su desempeño usando métricas estadísticas. Estas nos permiten cuantificar qué tan bien el modelo predice los valores de sólidos suspendidos a partir de la reflectancia en los datos de prueba.</p>
-<div id="fae4613d" class="cell" data-execution_count="11">
+<div id="44372556" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>y_pred <span class="op">=</span> regressor.predict(X_test)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>p_rmse <span class="op">=</span> mean_squared_error(y_test, y_pred)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>p_r2 <span class="op">=</span> r2_score(y_test, y_pred)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3597,7 +3597,7 @@ Métricas de desempeño
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<div id="9504f867" class="cell" data-execution_count="12">
+<div id="845497d4" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-stdout">
 <pre><code>El error cuadrático medio es: 1165.037
 El coeficiente de determinación (R²) es: -3.422</code></pre>
@@ -3625,7 +3625,7 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 <section id="visualizar-el-modelo" class="level4" data-number="2.2.6">
 <h4 data-number="2.2.6" class="anchored" data-anchor-id="visualizar-el-modelo"><span class="header-section-number">2.2.6</span> Visualizar el modelo</h4>
 <p>Finalmente, se visualiza gráficamente la relación entre reflectancia y sólidos suspendidos, tanto en el conjunto de entrenamiento como en el de prueba. Esto ayuda a interpretar de forma visual cómo se ajusta el modelo a los datos reales.</p>
-<div id="f732907f" class="cell" data-execution_count="13">
+<div id="e93fc0ae" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>), sharex<span class="op">=</span><span class="va">True</span>, sharey<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Gráfico entrenamiento</span></span>
@@ -3683,7 +3683,8 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 </section>
 <section id="análisis-de-regresión-por-banda" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="análisis-de-regresión-por-banda"><span class="header-section-number">2.3</span> Análisis de regresión por banda</h3>
-<div id="a89315c6" class="cell" data-execution_count="14">
+<p>Con el objetivo de profundizar el análisis, se evalúa la relación entre los sólidos suspendidos y cada una de las bandas espectrales disponibles de forma individual. Para ello, se entrena un modelo de regresión lineal simple por cada banda, utilizando los mismos datos experimentales. Este enfoque permite comparar el desempeño predictivo de cada banda por separado mediante métricas como el coeficiente de determinación R², su versión ajustada y el error cuadrático medio (RMSE).</p>
+<div id="b2538819" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Código</summary>
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -3760,7 +3761,7 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 <span id="cb21-72"><a href="#cb21-72" aria-hidden="true" tabindex="-1"></a><span class="co"># Tabla resumen</span></span>
 <span id="cb21-73"><a href="#cb21-73" aria-hidden="true" tabindex="-1"></a>df_resultados <span class="op">=</span> pd.DataFrame(resultados).sort_values(<span class="st">&quot;R2&quot;</span>, ascending<span class="op">=</span><span class="va">False</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb21-74"><a href="#cb21-74" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Tabla resumen de métricas por banda:&quot;</span>)</span>
-<span id="cb21-75"><a href="#cb21-75" aria-hidden="true" tabindex="-1"></a>display(df_resultados)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb21-75"><a href="#cb21-75" aria-hidden="true" tabindex="-1"></a>display(df_resultados.style.hide(axis<span class="op">=</span><span class="st">&quot;index&quot;</span>))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-display">
 <div>
@@ -3773,137 +3774,118 @@ El coeficiente de determinación (R²) es: -3.422</code></pre>
 <pre><code>Tabla resumen de métricas por banda:</code></pre>
 </div>
 <div class="cell-output cell-output-display">
-<div>
+<style type="text/css">
+</style>
 
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<table id="T_dbb8e" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">Banda</th>
-<th data-quarto-table-cell-role="th">R2</th>
-<th data-quarto-table-cell-role="th">R2_ajustado</th>
-<th data-quarto-table-cell-role="th">RMSE</th>
+<th id="T_dbb8e_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
+<th id="T_dbb8e_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2</th>
+<th id="T_dbb8e_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado</th>
+<th id="T_dbb8e_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>B08</td>
-<td>0.1732</td>
-<td>0.1515</td>
-<td>25.0121</td>
+<td id="T_dbb8e_row0_col0" class="data row0 col0">B08</td>
+<td id="T_dbb8e_row0_col1" class="data row0 col1">0.173200</td>
+<td id="T_dbb8e_row0_col2" class="data row0 col2">0.151500</td>
+<td id="T_dbb8e_row0_col3" class="data row0 col3">25.012100</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1</td>
-<td>B07</td>
-<td>0.1712</td>
-<td>0.1494</td>
-<td>25.0425</td>
+<td id="T_dbb8e_row1_col0" class="data row1 col0">B07</td>
+<td id="T_dbb8e_row1_col1" class="data row1 col1">0.171200</td>
+<td id="T_dbb8e_row1_col2" class="data row1 col2">0.149400</td>
+<td id="T_dbb8e_row1_col3" class="data row1 col3">25.042500</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">2</td>
-<td>B05</td>
-<td>0.1678</td>
-<td>0.1459</td>
-<td>25.0949</td>
+<td id="T_dbb8e_row2_col0" class="data row2 col0">B05</td>
+<td id="T_dbb8e_row2_col1" class="data row2 col1">0.167800</td>
+<td id="T_dbb8e_row2_col2" class="data row2 col2">0.145900</td>
+<td id="T_dbb8e_row2_col3" class="data row2 col3">25.094900</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">3</td>
-<td>B06</td>
-<td>0.1655</td>
-<td>0.1436</td>
-<td>25.1284</td>
+<td id="T_dbb8e_row3_col0" class="data row3 col0">B06</td>
+<td id="T_dbb8e_row3_col1" class="data row3 col1">0.165500</td>
+<td id="T_dbb8e_row3_col2" class="data row3 col2">0.143600</td>
+<td id="T_dbb8e_row3_col3" class="data row3 col3">25.128400</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">4</td>
-<td>B04</td>
-<td>0.1221</td>
-<td>0.0990</td>
-<td>25.7738</td>
+<td id="T_dbb8e_row4_col0" class="data row4 col0">B04</td>
+<td id="T_dbb8e_row4_col1" class="data row4 col1">0.122100</td>
+<td id="T_dbb8e_row4_col2" class="data row4 col2">0.099000</td>
+<td id="T_dbb8e_row4_col3" class="data row4 col3">25.773800</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">5</td>
-<td>B8A</td>
-<td>0.1068</td>
-<td>0.0833</td>
-<td>25.9983</td>
+<td id="T_dbb8e_row5_col0" class="data row5 col0">B8A</td>
+<td id="T_dbb8e_row5_col1" class="data row5 col1">0.106800</td>
+<td id="T_dbb8e_row5_col2" class="data row5 col2">0.083300</td>
+<td id="T_dbb8e_row5_col3" class="data row5 col3">25.998300</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">6</td>
-<td>B03</td>
-<td>0.0231</td>
-<td>-0.0026</td>
-<td>27.1887</td>
+<td id="T_dbb8e_row6_col0" class="data row6 col0">B03</td>
+<td id="T_dbb8e_row6_col1" class="data row6 col1">0.023100</td>
+<td id="T_dbb8e_row6_col2" class="data row6 col2">-0.002600</td>
+<td id="T_dbb8e_row6_col3" class="data row6 col3">27.188700</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">7</td>
-<td>B02</td>
-<td>0.0116</td>
-<td>-0.0144</td>
-<td>27.3477</td>
+<td id="T_dbb8e_row7_col0" class="data row7 col0">B02</td>
+<td id="T_dbb8e_row7_col1" class="data row7 col1">0.011600</td>
+<td id="T_dbb8e_row7_col2" class="data row7 col2">-0.014400</td>
+<td id="T_dbb8e_row7_col3" class="data row7 col3">27.347700</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">8</td>
-<td>B01</td>
-<td>0.0098</td>
-<td>-0.0163</td>
-<td>27.3732</td>
+<td id="T_dbb8e_row8_col0" class="data row8 col0">B01</td>
+<td id="T_dbb8e_row8_col1" class="data row8 col1">0.009800</td>
+<td id="T_dbb8e_row8_col2" class="data row8 col2">-0.016300</td>
+<td id="T_dbb8e_row8_col3" class="data row8 col3">27.373200</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">9</td>
-<td>B12</td>
-<td>0.0006</td>
-<td>-0.0257</td>
-<td>27.4999</td>
+<td id="T_dbb8e_row9_col0" class="data row9 col0">B12</td>
+<td id="T_dbb8e_row9_col1" class="data row9 col1">0.000600</td>
+<td id="T_dbb8e_row9_col2" class="data row9 col2">-0.025700</td>
+<td id="T_dbb8e_row9_col3" class="data row9 col3">27.499900</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">10</td>
-<td>B11</td>
-<td>0.0003</td>
-<td>-0.0260</td>
-<td>27.5036</td>
+<td id="T_dbb8e_row10_col0" class="data row10 col0">B11</td>
+<td id="T_dbb8e_row10_col1" class="data row10 col1">0.000300</td>
+<td id="T_dbb8e_row10_col2" class="data row10 col2">-0.026000</td>
+<td id="T_dbb8e_row10_col3" class="data row10 col3">27.503600</td>
 </tr>
 </tbody>
 </table>
-
 </div>
 </div>
+<div class="callout callout-style-default callout-note callout-titled" title="Conclusiones del análisis por banda">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p><strong>Calidad del ajuste (R² y R² ajustado):</strong></p>
-<ul>
-<li><strong>R² bajo (&lt; 0.20)</strong> en todas las bandas, lo cual indica que <strong>ninguna banda aislada</strong> explica buena parte de la variabilidad de los sólidos suspendidos.</li>
-<li><strong>R² ajustado</strong> muy similar a R² en las bandas con mejor desempeño (B08, B07, B05, B06), y <strong>negativo</strong> en las bandas con R² casi nulo (B03, B02, B01, B12, B11).<br>
-</li>
-<li><strong>Un R² ajustado negativo</strong> implica que usar la media de la variable (sin modelo) sería más eficaz que la regresión lineal simple.</li>
-</ul>
-<p><strong>Error de predicción (RMSE):</strong></p>
-<ul>
-<li><strong>RMSE ≈ 25</strong> para las cuatro mejores bandas (B08–B06), es decir, el error medio de predicción es de unas 25 unidades de <code>sol_sus</code>.<br>
-</li>
-<li>Las bandas con peor R² (B11, B12) presentan <strong>RMSE ≈ 27.5</strong>, casi equivalente a predecir siempre la media.</li>
-</ul>
-<p><strong>Siguientes pasos recomendados:</strong></p>
+<div class="callout-title-container flex-fill">
+Conclusiones del análisis por banda
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Los resultados muestran que, aunque algunas bandas como <strong>B08</strong>, <strong>B07</strong>, <strong>B05</strong> y <strong>B06</strong> presentan un desempeño ligeramente superior al resto, los valores de <strong>R² siguen siendo bajos (&lt; 0.20)</strong>, lo que indica que <strong>ninguna banda individual explica adecuadamente la variabilidad de los sólidos suspendidos</strong>. El <strong>R² ajustado</strong> es similar a R² en las bandas más destacadas, pero se vuelve negativo en aquellas con menor correlación (como B01, B02, B03, B11, B12), lo que sugiere que un modelo basado solo en la media de los datos sería más eficaz que aplicar una regresión lineal simple en esos casos.</p>
+<p>En cuanto al error de predicción, el <strong>RMSE se mantiene en torno a 25 unidades</strong> para las bandas con mejor ajuste, y alcanza valores cercanos a 27.5 en las de menor desempeño, lo que implica que el modelo apenas mejora con respecto a una predicción constante.</p>
+<p>Estas observaciones reflejan las limitaciones del enfoque univariable y motivan avanzar hacia estrategias más robustas. Entonces, analizo como siguiente paso explorar:</p>
 <ol type="1">
 <li><p><strong>Regresión multivariable</strong><br>
 Combinar las bandas mejor correlacionadas (por ejemplo, B08, B07, B05, B06) en un único modelo para evaluar si en conjunto mejoran R² y reducen RMSE.</p></li>
 <li><p><strong>Modelos no lineales</strong><br>
 Probar algoritmos como <strong>Random Forest</strong>, <strong>SVM</strong> o <strong>Redes Neuronales</strong> para capturar relaciones no lineales o interacciones espectrales.</p></li>
 <li><p><strong>Ingeniería de variables</strong><br>
-</p></li>
+Calcular <strong>índices espectrales</strong> (NDVI, índices de turbidez) como combinaciones de bandas.<br>
+Aplicar transformaciones (logaritmos, potencias) a las reflectancias o a <code>sol_sus</code> para estabilizar la varianza.</p></li>
+<li><p><strong>Validación cruzada</strong><br>
+Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas más robustas y evitar sobreajuste.</p></li>
 </ol>
-<ul>
-<li>Calcular <strong>índices espectrales</strong> (NDVI, índices de turbidez) como combinaciones de bandas.<br>
-</li>
-<li>Aplicar transformaciones (logaritmos, potencias) a las reflectancias o a <code>sol_sus</code> para estabilizar la varianza.</li>
-</ul>
-<ol start="4" type="1">
-<li><strong>Validación cruzada</strong><br>
-Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas más robustas y evitar sobreajuste.</li>
-</ol>
+</div>
+</div>
 <section id="análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables" class="level4" data-number="2.3.1">
 <h4 data-number="2.3.1" class="anchored" data-anchor-id="análisis-de-regresión-por-banda-aplicando-logaritmo-a-las-variables"><span class="header-section-number">2.3.1</span> Análisis de regresión por banda aplicando logaritmo a las variables</h4>
-<div id="b3791cbf" class="cell" data-execution_count="15">
+<div id="513e2177" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Código</summary>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -3956,107 +3938,93 @@ Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas 
 <span id="cb23-48"><a href="#cb23-48" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-49"><a href="#cb23-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar tabla de resultados</span></span>
 <span id="cb23-50"><a href="#cb23-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Tabla de regresión lineal sobre variables log-transformadas:&quot;</span>)</span>
-<span id="cb23-51"><a href="#cb23-51" aria-hidden="true" tabindex="-1"></a>display(df_resultados)</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb23-51"><a href="#cb23-51" aria-hidden="true" tabindex="-1"></a>display(df_resultados.style.hide(axis<span class="op">=</span><span class="st">&quot;index&quot;</span>))</span></code><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Tabla de regresión lineal sobre variables log-transformadas:</code></pre>
 </div>
 <div class="cell-output cell-output-display">
-<div>
+<style type="text/css">
+</style>
 
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<table id="T_247f0" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">Banda</th>
-<th data-quarto-table-cell-role="th">R2_log</th>
-<th data-quarto-table-cell-role="th">R2_ajustado_log</th>
-<th data-quarto-table-cell-role="th">RMSE_log</th>
+<th id="T_247f0_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Banda</th>
+<th id="T_247f0_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">R2_log</th>
+<th id="T_247f0_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">R2_ajustado_log</th>
+<th id="T_247f0_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RMSE_log</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>B05</td>
-<td>0.2594</td>
-<td>0.2400</td>
-<td>0.2363</td>
+<td id="T_247f0_row0_col0" class="data row0 col0">B05</td>
+<td id="T_247f0_row0_col1" class="data row0 col1">0.259400</td>
+<td id="T_247f0_row0_col2" class="data row0 col2">0.240000</td>
+<td id="T_247f0_row0_col3" class="data row0 col3">0.236300</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1</td>
-<td>B07</td>
-<td>0.2549</td>
-<td>0.2353</td>
-<td>0.2370</td>
+<td id="T_247f0_row1_col0" class="data row1 col0">B07</td>
+<td id="T_247f0_row1_col1" class="data row1 col1">0.254900</td>
+<td id="T_247f0_row1_col2" class="data row1 col2">0.235300</td>
+<td id="T_247f0_row1_col3" class="data row1 col3">0.237000</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">2</td>
-<td>B08</td>
-<td>0.2500</td>
-<td>0.2302</td>
-<td>0.2378</td>
+<td id="T_247f0_row2_col0" class="data row2 col0">B08</td>
+<td id="T_247f0_row2_col1" class="data row2 col1">0.250000</td>
+<td id="T_247f0_row2_col2" class="data row2 col2">0.230200</td>
+<td id="T_247f0_row2_col3" class="data row2 col3">0.237800</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">3</td>
-<td>B06</td>
-<td>0.2481</td>
-<td>0.2283</td>
-<td>0.2381</td>
+<td id="T_247f0_row3_col0" class="data row3 col0">B06</td>
+<td id="T_247f0_row3_col1" class="data row3 col1">0.248100</td>
+<td id="T_247f0_row3_col2" class="data row3 col2">0.228300</td>
+<td id="T_247f0_row3_col3" class="data row3 col3">0.238100</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">4</td>
-<td>B04</td>
-<td>0.1918</td>
-<td>0.1705</td>
-<td>0.2469</td>
+<td id="T_247f0_row4_col0" class="data row4 col0">B04</td>
+<td id="T_247f0_row4_col1" class="data row4 col1">0.191800</td>
+<td id="T_247f0_row4_col2" class="data row4 col2">0.170500</td>
+<td id="T_247f0_row4_col3" class="data row4 col3">0.246900</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">5</td>
-<td>B8A</td>
-<td>0.1546</td>
-<td>0.1323</td>
-<td>0.2525</td>
+<td id="T_247f0_row5_col0" class="data row5 col0">B8A</td>
+<td id="T_247f0_row5_col1" class="data row5 col1">0.154600</td>
+<td id="T_247f0_row5_col2" class="data row5 col2">0.132300</td>
+<td id="T_247f0_row5_col3" class="data row5 col3">0.252500</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">6</td>
-<td>B03</td>
-<td>0.0365</td>
-<td>0.0112</td>
-<td>0.2695</td>
+<td id="T_247f0_row6_col0" class="data row6 col0">B03</td>
+<td id="T_247f0_row6_col1" class="data row6 col1">0.036500</td>
+<td id="T_247f0_row6_col2" class="data row6 col2">0.011200</td>
+<td id="T_247f0_row6_col3" class="data row6 col3">0.269500</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">7</td>
-<td>B02</td>
-<td>0.0155</td>
-<td>-0.0104</td>
-<td>0.2725</td>
+<td id="T_247f0_row7_col0" class="data row7 col0">B02</td>
+<td id="T_247f0_row7_col1" class="data row7 col1">0.015500</td>
+<td id="T_247f0_row7_col2" class="data row7 col2">-0.010400</td>
+<td id="T_247f0_row7_col3" class="data row7 col3">0.272500</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">8</td>
-<td>B01</td>
-<td>0.0083</td>
-<td>-0.0178</td>
-<td>0.2735</td>
+<td id="T_247f0_row8_col0" class="data row8 col0">B01</td>
+<td id="T_247f0_row8_col1" class="data row8 col1">0.008300</td>
+<td id="T_247f0_row8_col2" class="data row8 col2">-0.017800</td>
+<td id="T_247f0_row8_col3" class="data row8 col3">0.273500</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">9</td>
-<td>B11</td>
-<td>0.0000</td>
-<td>-0.0263</td>
-<td>0.2746</td>
+<td id="T_247f0_row9_col0" class="data row9 col0">B11</td>
+<td id="T_247f0_row9_col1" class="data row9 col1">0.000000</td>
+<td id="T_247f0_row9_col2" class="data row9 col2">-0.026300</td>
+<td id="T_247f0_row9_col3" class="data row9 col3">0.274600</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">10</td>
-<td>B12</td>
-<td>0.0000</td>
-<td>-0.0263</td>
-<td>0.2746</td>
+<td id="T_247f0_row10_col0" class="data row10 col0">B12</td>
+<td id="T_247f0_row10_col1" class="data row10 col1">0.000000</td>
+<td id="T_247f0_row10_col2" class="data row10 col2">-0.026300</td>
+<td id="T_247f0_row10_col3" class="data row10 col3">0.274600</td>
 </tr>
 </tbody>
 </table>
-
-</div>
 </div>
 </div>
 <p><strong>Mejora con respecto al modelo lineal original:</strong></p>
@@ -4086,7 +4054,7 @@ Implementar <strong>k‑fold cross‑validation</strong> para obtener métricas 
 <section id="incorporar-aic-en-la-selección-de-modelo" class="level4" data-number="2.4.1">
 <h4 data-number="2.4.1" class="anchored" data-anchor-id="incorporar-aic-en-la-selección-de-modelo"><span class="header-section-number">2.4.1</span> Incorporar AIC en la selección de modelo</h4>
 <p>El AIC penaliza por complejidad y te ayudará a decidir si conviene agregar o quitar bandas.</p>
-<div id="86c1d816" class="cell" data-execution_count="16">
+<div id="f51d6eac" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Código</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
