@@ -124,7 +124,7 @@ El aprendizaje automático es esencial para mejorar la precisión y rapidez en e
 ## Desarrollo del modelo con **Python**
 
 
-### Procesamiento de datos
+### Procesamiento de datos (Sen2Cor)
 
 Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada con el objetivo de analizar el comportamiento del parámetro **sólidos suspendidos (sol_sus)** en una región específica (pixel `3x3`). Para esto, utilicé el lenguaje Python y la biblioteca `pandas`, que resulta particularmente eficiente para el manejo de estructuras tabulares. 
 
@@ -318,6 +318,45 @@ df_pixel_3x3.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 
 
 
+### Procesamiento de datos (ACOLITE)
+
+A continuación teniendo la misma lógica de procesamiento que aplique antes, pero usando el nuevo archivo `base_de_datos_gis_acolite.csv`.
+
+```{python}
+import pandas as pd
+
+# 1. Cargar archivos CSV 
+gis_acol_df = pd.read_csv('datos/base_de_datos_gis_acolite.csv')
+lab_df = pd.read_csv('datos/base_de_datos_lab.csv')
+
+# 2. Filtrar solo el parámetro 'sol_sus' 
+sol_sus_df = lab_df[lab_df["param"] == "sol_sus"]
+sol_sus_df = sol_sus_df.rename(columns={"valor": "sol_sus"})
+
+#  3. Pivotear bandas en columnas 
+gis_pivot = gis_acol_df.pivot_table(
+    index=['fecha', 'punto', 'latitud', 'longitud'],
+    columns='banda',
+    values='reflect'
+).reset_index()
+
+gis_pivot.columns.name = None  # Quitar la etiqueta 'banda'
+
+# 4. Combinar reflectancias con sol_sus 
+df_merged = pd.merge(
+    gis_pivot,
+    sol_sus_df[['fecha', 'latitud', 'longitud', 'sol_sus']],
+    on=['fecha', 'latitud', 'longitud'],
+    how='inner'
+)
+
+# 5. Guardar resultado final
+df_merged.to_csv('datos/datos_sol_sus_acolite.csv', index=False)
+print("Archivo final guardado como: datos/datos_sol_sus_acolite.csv")
+```
+
+
+
 ### Análisis de Regresión Lineal
 
 En este análisis aplico un modelo de regresión lineal simple para estudiar la relación entre la **reflectancia** y los **sólidos suspendidos**, utilizando datos experimentales. La regresión lineal es una técnica fundamental del aprendizaje automático supervisado que nos permite predecir un valor continuo basado en una o más variables independientes. A lo largo de este documento, se explican paso a paso las acciones realizadas y los conceptos clave para comprender y replicar este análisis.
@@ -359,7 +398,7 @@ Importo el archivo `.csv` con los datos experimentales. Se visualizan las primer
 
 ```{python}
 # Cargar el CSV
-datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+datos = pd.read_csv('datos/datos_sol_sus_acolite.csv')
 
 # Mostrar las primeras filas para verificar
 datos.head()
@@ -523,7 +562,7 @@ import matplotlib.pyplot as plt
 import math
 
 # Cargar datos
-datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+datos = pd.read_csv('datos/datos_sol_sus_acolite.csv')
 
 # Detectar columnas de bandas
 bandas = [col for col in datos.columns if col.startswith("B")]
@@ -630,59 +669,137 @@ En esta etapa del análisis, aplico una transformación logarítmica natural a l
 
 El procedimiento es similar al análisis anterior, pero antes de entrenar el modelo se aplica `log(x)` a las columnas correspondientes. Para evitar problemas con ceros en los datos, estos se reemplazan por `NaN` y se eliminan del análisis.
 
+
 ```{python}
-#|code-fold: true
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
+import math
 
-# Cargar datos
-datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+# 1. Cargar datos 
+datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
+bandas = [c for c in datos.columns if c.startswith("B")]
 
-# Detectar columnas de bandas
-bandas = [col for col in datos.columns if col.startswith("B")]
+# 2.  Filtrar positivos (requisito para log) 
+mask_pos = (datos["sol_sus"] > 0) & (datos[bandas] > 0).all(axis=1)
+datos_log = datos.loc[mask_pos].copy()
 
-# Lista para guardar resultados
-resultados = []
+# 3.Transformar a log-natural (para entrenar) 
+datos_log["log_sol_sus"] = np.log(datos_log["sol_sus"])
+for b in bandas:
+    datos_log[f"log_{b}"] = np.log(datos_log[b])
 
-for banda in bandas:
-    # Variables: aplicamos logaritmo natural
-    X = np.log(datos[[banda]].replace(0, np.nan)).dropna()
-    y = np.log(datos.loc[X.index, "sol_sus"].replace(0, np.nan))
-    
-    # División en entrenamiento y prueba
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, shuffle=False
-    )
+log_bandas = [f"log_{b}" for b in bandas]
 
-    # Ajuste del modelo sobre los datos log-transformados
-    modelo = LinearRegression().fit(X_train, y_train)
-    y_train_pred = modelo.predict(X_train)
+# 4. Split train / test (test se descarta aquí) 
+X_total = datos_log[log_bandas]
+y_total = datos_log["log_sol_sus"]
+X_train, _, y_train, _ = train_test_split(
+    X_total, y_total, test_size=0.2, shuffle=False
+)
 
-    # Métricas en escala logarítmica
-    r2 = modelo.score(X_train, y_train)
-    n = len(y_train)
-    p = X_train.shape[1]
-    r2_adj = 1 - (1 - r2) * (n - 1) / (n - p - 1)
-    rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+# 5. Funciones de métricas 
+def metrics_log(model, X, y):
+    """Métricas sobre los datos en log (las que ya tenías)."""
+    y_pred = model.predict(X)
+    rmse = np.sqrt(mean_squared_error(y, y_pred))
+    r2   = r2_score(y, y_pred)
+    n, p = X.shape
+    r2_adj = 1 - ((1 - r2) * (n - 1)) / (n - p - 1)
+    return rmse, r2, r2_adj
 
-    resultados.append({
-        "Banda": banda,
-        "R2_log": round(r2, 4),
-        "R2_ajustado_log": round(r2_adj, 4),
-        "RMSE_log": round(rmse, 4)
-    })
+def metrics_original(model, X, y):
+    """
+    Idem, pero después de volver a la escala original:
+       sol_sus_pred  = exp(ŷ_log)
+       sol_sus_true  = exp(y_log)
+    """
+    y_pred_log  = model.predict(X).ravel()
+    y_pred_orig = np.exp(y_pred_log)
+    y_true_orig = np.exp(y.values)
+    rmse = np.sqrt(mean_squared_error(y_true_orig, y_pred_orig))
+    r2   = r2_score(y_true_orig, y_pred_orig)
+    n, p = X.shape
+    r2_adj = 1 - ((1 - r2) * (n - 1)) / (n - p - 1)
+    return rmse, r2, r2_adj
 
-# Convertir a DataFrame y ordenar
-df_resultados = pd.DataFrame(resultados) \
-    .sort_values("R2_log", ascending=False) \
-    .reset_index(drop=True)
+# 6.  Entrenar un modelo por banda y registrar métricas 
+resultados = []           # para log
+resultados_nolog = []     # para escala original
+lineas_log = {}           # (x, ŷ_log) para graficar en log-log
+lineas_nolog = {}         # (x_original, ŷ_original) para graficar sin log
 
-# Mostrar tabla de resultados
-print("Tabla de regresión lineal sobre variables log-transformadas:")
-display(df_resultados.style.hide(axis="index"))
+for b, lb in zip(bandas, log_bandas):
+    Xtr = X_train[[lb]]
+    reg = LinearRegression().fit(Xtr, y_train)
+
+    # ── Métricas en log
+    rmse_l, r2_l, r2a_l = metrics_log(reg, Xtr, y_train)
+    resultados.append({"Banda": b, "RMSE_log": rmse_l,
+                       "R²_log": r2_l, "R²aj_log": r2a_l})
+
+    # ── Métricas en original
+    rmse_o, r2_o, r2a_o = metrics_original(reg, Xtr, y_train)
+    resultados_nolog.append({"Banda": b, "RMSE": rmse_o,
+                             "R²": r2_o, "R²aj": r2a_o})
+
+    # ── Recta ordenada para ambas escalas
+    order = np.argsort(Xtr.values.ravel())
+    x_log_ord   = Xtr.values.ravel()[order]             # log(B)
+    y_pred_log  = reg.predict(Xtr).ravel()[order]       # log(sol_suŝ)
+    lineas_log[b] = (x_log_ord, y_pred_log)
+
+    # Para volver a la escala original:
+    x_orig_ord  = np.exp(x_log_ord)                     # B
+    y_pred_orig = np.exp(y_pred_log)                    # sol_suŝ
+    lineas_nolog[b] = (x_orig_ord, y_pred_orig)
+
+# 7. DataFrames con métricas
+res_df_log    = (pd.DataFrame(resultados)
+                   .round(3)
+                   .sort_values("RMSE_log")
+                   .reset_index(drop=True))
+
+res_df_nolog  = (pd.DataFrame(resultados_nolog)
+                   .round(3)
+                   .sort_values("RMSE")
+                   .reset_index(drop=True))
+
+# 8.Gráficos *sin* log (escala original)
+n_cols = 3
+n_rows = math.ceil(len(bandas) / n_cols)
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 4 * n_rows))
+axes = axes.flatten()
+
+for idx, b in enumerate(bandas):
+    ax = axes[idx]
+    # Datos originales de entrenamiento (sin log):
+    x_orig = np.exp(X_train[f"log_{b}"])
+    y_orig = np.exp(y_train)
+    ax.scatter(x_orig, y_orig, alpha=0.6, color="#9D50A6", label="Entrenamiento")
+    # Curva modelo en original:
+    ax.plot(*lineas_nolog[b], lw=3, color="#17A77E", label="Modelo")
+    ax.set(xlabel=b, ylabel="sol_sus", title=f"Banda {b} (escala original)")
+    ax.legend()
+    ax.grid(True)
+
+# Si sobran ejes, quitarlos
+for j in range(len(bandas), len(axes)):
+    fig.delaxes(axes[j])
+
+plt.tight_layout()
+plt.show()
+
+# 9.  Mostrar tablas de métricas
+print("\nMétricas en **escala log-log** (ordenadas por RMSE_log):\n")
+print(res_df_log.to_string(index=False))
+
+print("\nMétricas en **escala original** (ordenadas por RMSE):\n")
+print(res_df_nolog.to_string(index=False))
+
 ```
 
 ::: {.dropdown}
@@ -727,7 +844,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
 # Cargar datos
-datos = pd.read_csv('datos/datos_sol_sus_pixel_3x3.csv')
+datos = pd.read_csv('datos/datos_sol_sus_acolite.csv')
 
 # Detectar columnas de bandas
 bandas = [col for col in datos.columns if col.startswith("B")]
