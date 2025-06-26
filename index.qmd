@@ -352,7 +352,7 @@ df_merged = pd.merge(
 
 # 5. Guardar resultado final
 df_merged.to_csv('datos/datos_sol_sus_acolite.csv', index=False)
-print("Archivo final guardado como: datos/datos_sol_sus_acolite.csv")
+
 ```
 
 
@@ -814,7 +814,9 @@ print(res_df_nolog.to_string(index=False))
 
 >El `R² ajustado` penaliza la complejidad del modelo y ayuda a evaluar si el ajuste mejora más allá de lo que se esperaría por azar.
 
-</details> :::
+</details> 
+
+:::
 
 
 ::: {.callout-note title="Comparación entre regresión lineal simple y regresión logarítmica"}
