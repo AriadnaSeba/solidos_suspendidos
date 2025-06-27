@@ -600,8 +600,8 @@ for i, banda in enumerate(bandas):
 
     resultados.append({
         "Banda": banda,
-        "R2": round(r2, 4),
-        "R2_ajustado": round(r2_adj, 4),
+        "R²": round(r2, 4),
+        "R²_ajustado": round(r2_adj, 4),
         "RMSE": round(rmse, 4)
     })
 
@@ -625,7 +625,7 @@ plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.show()
 
 # Tabla resumen
-df_resultados = pd.DataFrame(resultados).sort_values("R2", ascending=False).reset_index(drop=True)
+df_resultados = pd.DataFrame(resultados).sort_values("R²", ascending=False).reset_index(drop=True)
 print("Tabla resumen de métricas por banda:")
 display(df_resultados.style.hide(axis="index"))
 
@@ -634,24 +634,9 @@ display(df_resultados.style.hide(axis="index"))
 
 ::: {.callout-note title="Conclusiones del análisis por banda"}
 
-Los resultados muestran que, aunque algunas bandas como **B08**, **B07**, **B05** y **B06** presentan un desempeño ligeramente superior al resto, los valores de **R² siguen siendo bajos (< 0.20)**, lo que indica que **ninguna banda individual explica adecuadamente la variabilidad de los sólidos suspendidos**. El **R² ajustado** es similar a R² en las bandas más destacadas, pero se vuelve negativo en aquellas con menor correlación (como B01, B02, B03, B11, B12), lo que sugiere que un modelo basado solo en la media de los datos sería más eficaz que aplicar una regresión lineal simple en esos casos.
+Al aplicar regresión lineal simple a cada banda espectral por separado, se observó que ninguna logra predecir con precisión los sólidos suspendidos. Las bandas B05, B06 y B07 fueron las que mejor se desempeñaron, pero con un R² apenas superior al 18 %, lo que indica que explican muy poca variabilidad. Además, los errores (RMSE) siguen siendo altos en relación con los valores reales.
 
-En cuanto al error de predicción, el **RMSE se mantiene en torno a 25 unidades** para las bandas con mejor ajuste, y alcanza valores cercanos a 27.5 en las de menor desempeño, lo que implica que el modelo apenas mejora con respecto a una predicción constante.
-
-Estas observaciones reflejan las limitaciones del enfoque univariable y motivan avanzar hacia estrategias más robustas. Entonces, analizo como siguiente paso explorar:
-
-  1. **Regresión multivariable**  
-    Combinar las bandas mejor correlacionadas (por ejemplo, B08, B07, B05, B06) en un único modelo para evaluar si en conjunto mejoran R² y reducen RMSE.
-
-  2. **Modelos no lineales**  
-    Probar algoritmos como **Random Forest**, **SVM** o **Redes Neuronales** para capturar relaciones no lineales o interacciones espectrales.
-
-  3. **Ingeniería de variables**  
-    Calcular **índices espectrales** (NDVI, índices de turbidez) como combinaciones de bandas.  
-    Aplicar transformaciones (logaritmos, potencias) a las reflectancias o a `sol_sus` para estabilizar la varianza.
-
-  4. **Validación cruzada**  
-      Implementar **k‑fold cross‑validation** para obtener métricas más robustas y evitar sobreajuste.
+Esto sugiere que la relación entre reflectancia y sólidos suspendidos no es lineal en escala natural, y que sería necesario probar modelos más complejos. En próximos pasos, pienso aplicar transformaciones logarítmicas y combinaciones de bandas para mejorar el ajuste.
 
 :::
 
@@ -819,15 +804,11 @@ print(res_df_nolog.to_string(index=False))
 :::
 
 
-::: {.callout-note title="Comparación entre regresión lineal simple y regresión logarítmica"}
+::: {.callout-note title="Conclusión del ajuste log–log por banda"}
 
-Al aplicar una regresión lineal sobre las variables transformadas logarítmicamente, se observa una mejora clara en el ajuste del modelo para las bandas más relevantes. En particular, las bandas B05, B07, B08 y B06 alcanzan valores de R² entre 0.25 y 0.26, lo que representa un aumento significativo respecto a los valores originales, que estaban en torno a 0.16–0.17. Esta mejora también se refleja en el RMSE, que desciende a aproximadamente 0.236 en la escala logarítmica, en contraste con un RMSE promedio cercano a 25 en la escala original.
+Aplicar la transformación logarítmica mejoró notablemente el ajuste respecto al análisis en escala natural. Las bandas B06, B07 y B05 mostraron los mejores resultados, con R²_log cercanos a 0.30 y una reducción del error (RMSE) tanto en escala logarítmica como en la original.
 
-La transformación log-log parece capturar de manera más adecuada la relación entre la reflectancia y los sólidos suspendidos, sugiriendo que esta relación es más multiplicativa que estrictamente lineal. Además, el hecho de que el R² ajustado se mantenga cercano al R² simple indica que la mejora en el ajuste no es resultado de una sobreparametrización, sino de una relación más coherente entre las variables.
-
-El orden de relevancia de las bandas se mantiene prácticamente igual al obtenido en el análisis sin logaritmos: B05 lidera con el mejor ajuste, seguida por B07, B08 y B06. Por otro lado, las bandas B11, B12, B01 y B02 continúan mostrando un desempeño muy pobre, con valores de R² prácticamente nulos o negativos, lo que confirma su escaso aporte predictivo en un modelo univariado.
-
-En resumen, la regresión sobre datos transformados mejora el desempeño predictivo, pero los niveles de R² siguen siendo relativamente bajos. Esto indica que es necesario avanzar hacia modelos más complejos, como una regresión multivariable que combine varias bandas, o incluso explorar enfoques no lineales. También será importante considerar índices espectrales derivados y aplicar validación cruzada para asegurar la robustez de los resultados.
+Aun así, el desempeño sigue siendo limitado si se usa cada banda por separado. Esto sugiere que para mejorar las predicciones es necesario combinar bandas, aplicar modelos más complejos o probar con índices espectrales derivados.
 
 :::
 
@@ -837,79 +818,502 @@ En resumen, la regresión sobre datos transformados mejora el desempeño predict
 
 Para evaluar qué bandas individuales son más relevantes para predecir los sólidos suspendidos, se ajustó un modelo de regresión lineal simple en escala logarítmica para cada banda. Además de calcular el coeficiente de determinación (R²) y el error cuadrático medio (RMSE), se calcula ahora el **AIC (Criterio de Información de Akaike)**, que penaliza la complejidad del modelo. Esto ayuda a decidir si la incorporación de una banda es realmente valiosa o si se está agregando complejidad innecesaria al modelo.
 
+
 ```{python}
 #|code-fold: true
+# 0. Librerías
 import pandas as pd
 import numpy as np
-import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
-# Cargar datos
-datos = pd.read_csv('datos/datos_sol_sus_acolite.csv')
+# 1. Cargar datos y detectar bandas
+datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
+bandas = [c for c in datos.columns if c.startswith("B")]
 
-# Detectar columnas de bandas
-bandas = [col for col in datos.columns if col.startswith("B")]
+# 2. Filtrar casos con valores positivos (requisito de log)
+mask_pos = (datos["sol_sus"] > 0) & (datos[bandas] > 0).all(axis=1)
+datos_log = datos.loc[mask_pos].copy()
 
-# Lista para guardar resultados
-resultados = []
+# 3. Transformar a log-natural
+datos_log["log_sol_sus"] = np.log(datos_log["sol_sus"])
+for b in bandas:
+    datos_log[f"log_{b}"] = np.log(datos_log[b])
 
-for banda in bandas:
-    # Log‑transform (evitando ceros)
-    X = np.log(datos[[banda]].replace(0, np.nan)).dropna()
-    y = np.log(datos.loc[X.index, "sol_sus"].replace(0, np.nan))
-    
-    # División en entrenamiento/prueba
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, shuffle=False
-    )
+log_bandas = [f"log_{b}" for b in bandas]
 
-    # Ajuste de OLS para obtener AIC, R² y R² ajustado
-    Xc = sm.add_constant(X_train)           # añade intercepto
-    modelo = sm.OLS(y_train, Xc).fit()
+# 4. Partición entrenamiento / test 
+X_total = datos_log[log_bandas]
+y_total = datos_log["log_sol_sus"]
 
-    # Predicciones de entrenamiento para RMSE
-    y_train_pred = modelo.predict(Xc)
-
-    # Métricas
-    r2     = modelo.rsquared
-    r2_adj = modelo.rsquared_adj
-    mse    = mean_squared_error(y_train, y_train_pred)
-    rmse   = np.sqrt(mse)
-    aic    = modelo.aic
-
-    resultados.append({
-        "Banda":        banda,
-        "R2":       round(r2,     4),
-        "R2_ajustado":  round(r2_adj, 4),
-        "RMSE":     round(rmse,   4),
-        "AIC":          round(aic,    2)
-    })
-
-# Convertir a DataFrame y ordenar por R2_log
-df_resultados = (
-    pd.DataFrame(resultados)
-      .sort_values("R2", ascending=False)
-      .reset_index(drop=True)
+X_train, _, y_train, _ = train_test_split(
+    X_total, y_total, test_size=0.20, shuffle=False
 )
 
-# Mostrar tabla de resultados
-print("Tabla de regresión log–log por banda con AIC (statsmodels):")
-display(df_resultados.style.hide(axis="index"))
+# 5. Funciones auxiliares (AIC + métricas)
+def aic_gauss(model, X, y):
+    """
+    AIC para regresión lineal con ruido ~ N(0, σ²)
+    AIC = n · ln(RSS/n) + 2k
+    """
+    n = len(y)
+    k = X.shape[1] + 1  # predictores + intercepto
+    rss = np.sum((y - model.predict(X)) ** 2)
+    return n * np.log(rss / n) + 2 * k
+
+def metrics_log(model, X, y):
+    y_pred = model.predict(X)
+    rmse = np.sqrt(mean_squared_error(y, y_pred))
+    r2   = r2_score(y, y_pred)
+    n, p = X.shape
+    r2_adj = 1 - ((1 - r2) * (n - 1)) / (n - p - 1)
+    return rmse, r2, r2_adj
+
+# 6. Ajuste univariable banda-a-banda + AIC
+resultados = []
+
+for b in bandas:
+    lb = f"log_{b}"
+    Xtr = X_train[[lb]]
+    reg = LinearRegression().fit(Xtr, y_train)
+
+    rmse_log, r2_log, r2a_log = metrics_log(reg, Xtr, y_train)
+    aic_val = aic_gauss(reg, Xtr, y_train)
+
+    resultados.append({
+        "Banda"    : b,
+        "RMSE_log" : rmse_log,
+        "R²_log"   : r2_log,
+        "R²aj_log" : r2a_log,
+        "AIC"      : aic_val
+    })
+
+# 7. Tabla ordenada por AIC
+df_log  = (pd.DataFrame(resultados)
+             .round(3)
+             .sort_values("AIC")
+             .reset_index(drop=True))
+
+print("\nAIC y métricas en escala log-log (ordenadas por AIC):\n")
+print(df_log.to_string(index=False))
+
 ```
 
 
-::: {.callout-note title="Evaluación individual de bandas con AIC"}
+::: {.callout-note title="Conclusión sobre la selección de bandas con AIC"}
 
-En este contexto, las bandas **B05**, **B07**, **B08** y **B06** no solo muestran los mayores valores de R² logarítmico (entre 0.248 y 0.259), sino que también presentan los **valores más bajos de AIC**, lo que confirma que son candidatas sólidas para construir modelos multivariables. A su vez, los valores de **RMSE en escala logarítmica** siguen siendo consistentes con los obtenidos previamente, en el orden de **0.236 a 0.238**.
+Los resultados del AIC coinciden con las métricas de desempeño: las bandas B06 y B07 son las más relevantes para predecir sólidos suspendidos, mostrando los valores más bajos de AIC (-69.2 y -69.1 respectivamente), así como los mejores valores de R²_log (~0.30) y RMSE_log (~0.32).
 
-Estos resultados refuerzan lo observado en los análisis anteriores: **ninguna banda aislada logra un ajuste sobresaliente**, pero estas cuatro se destacan claramente del resto tanto por su capacidad explicativa como por su eficiencia según el criterio de información (AIC). El AIC penaliza modelos más complejos, por lo que su bajo valor indica que estos modelos log-log simples son adecuados sin incurrir en sobreajuste.
+Las demás bandas presentan AIC menos favorables, lo que indica que, individualmente, aportan menos información útil y no justifican la complejidad del modelo.
 
-En cambio, las bandas **B11**, **B12**, **B01** y **B02** presentan **R² cercanos o iguales a cero**, junto con **AIC altos (≥ 13)**, lo que confirma su escasa utilidad en modelos univariantes, incluso tras transformación logarítmica.
-
-Este análisis refuerza la idea de que, aunque la relación entre reflectancia y sólidos suspendidos no sea linealmente fuerte en ninguna banda aislada, es posible que una combinación de varias de ellas explique mejor la variabilidad del fenómeno observado. El siguiente paso será construir un modelo multivariado que combine estas bandas con buen desempeño individual y evaluar si, en conjunto, se logra un ajuste más robusto.
+Por lo tanto, para modelos simples basados en una sola banda, B06 y B07 son las candidatas preferentes. Sin embargo, para un mejor desempeño se recomienda evaluar modelos que combinen varias bandas.
 
 :::
 
 
 
+#### Incorporar validación cruzada en la selección de modelo
+
+En esta etapa incorporo una validación cruzada (CV) para evaluar la robustez y generalización del modelo univariable basado en cada banda espectral. La validación cruzada consiste en dividir el conjunto de entrenamiento en varios “folds” o particiones, entrenar el modelo en todas menos una, y validar en la partición restante, repitiendo este proceso rotando las particiones. Esto ayuda a obtener métricas de desempeño más confiables y evitar sobreajuste al conjunto de entrenamiento.
+
+El flujo completo que implemento es:
+- Dividir el conjunto completo en un 80 % para entrenamiento y un 20 % para prueba final (hold-out).
+- En el 80 % de entrenamiento, aplicar validación cruzada K-Fold (5 folds) para evaluar RMSE y coeficiente de determinación ajustado (R² ajustado) de cada banda.
+- Calcular también el AIC para cada modelo univariable, utilizando el conjunto completo de entrenamiento (80 %) para penalizar complejidad.
+- Ordenar las bandas por AIC y, en caso de empate, desempatar usando el promedio de RMSE de la validación cruzada.
+- Finalmente, con la banda ganadora entrenar el modelo sobre todo el 80 % y evaluar su desempeño en el conjunto de prueba (hold-out 20 %).
+
+Esta estrategia permite seleccionar la banda más relevante no solo por la bondad del ajuste, sino también considerando la estabilidad y capacidad predictiva en datos no vistos, ofreciendo una selección más robusta y realista para modelos futuros.
+
+```{python}
+#|code-fold: true
+# ─────────────────────────────────────────────────────────────────────
+# 0. LIBRERÍAS
+# ─────────────────────────────────────────────────────────────────────
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.utils import resample
+
+# ─────────────────────────────────────────────────────────────────────
+# 1. CARGAR DATOS Y DETECTAR BANDAS
+# ─────────────────────────────────────────────────────────────────────
+datos  = pd.read_csv("datos/datos_sol_sus_acolite.csv")
+bandas = [c for c in datos.columns if c.startswith("B")]
+
+# ─────────────────────────────────────────────────────────────────────
+# 2. FILTRAR CASOS > 0  (requisito de log)
+# ─────────────────────────────────────────────────────────────────────
+mask_pos = (datos["sol_sus"] > 0) & (datos[bandas] > 0).all(axis=1)
+datos_log = datos.loc[mask_pos].copy()
+
+# ─────────────────────────────────────────────────────────────────────
+# 3. TRANSFORMACIÓN LOGARÍTMICA
+# ─────────────────────────────────────────────────────────────────────
+datos_log["log_sol_sus"] = np.log(datos_log["sol_sus"])
+for b in bandas:
+    datos_log[f"log_{b}"] = np.log(datos_log[b])
+
+log_bandas = [f"log_{b}" for b in bandas]
+
+X_full = datos_log[log_bandas].values
+y_full = datos_log["log_sol_sus"].values
+
+# ─────────────────────────────────────────────────────────────────────
+# 4. SPLIT HOLD-OUT 80/20  (shuffle=False para respetar orden)
+# ─────────────────────────────────────────────────────────────────────
+X_train_full, X_test_full, y_train_full, y_test_full = train_test_split(
+    X_full, y_full, test_size=0.20, shuffle=False
+)
+
+# ─────────────────────────────────────────────────────────────────────
+# 5. FUNCIONES AUXILIARES
+# ─────────────────────────────────────────────────────────────────────
+def aic_gauss(model, X, y):
+    """AIC con supuesto de ruido gaussiano homocedástico."""
+    n = len(y)
+    k = X.shape[1] + 1    # +1 intercepto
+    rss = np.sum((y - model.predict(X)) ** 2)
+    return n * np.log(rss / n) + 2 * k
+
+def r2_adj(r2, n, p):
+    return 1 - (1 - r2) * (n - 1) / (n - p - 1)
+
+def cv_metrics(X_mat, y_vec, cv):
+    """Devuelve medias y sd del RMSE y medias de R² y R²aj."""
+    model = LinearRegression()
+    rmse_folds, r2_folds, r2a_folds = [], [], []
+
+    for tr_idx, val_idx in cv.split(X_mat):
+        X_tr, X_val = X_mat[tr_idx], X_mat[val_idx]
+        y_tr, y_val = y_vec[tr_idx], y_vec[val_idx]
+
+        model.fit(X_tr, y_tr)
+        y_pred = model.predict(X_val)
+
+        rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+        r2   = r2_score(y_val, y_pred)
+        r2a  = r2_adj(r2, len(y_val), X_mat.shape[1])
+
+        rmse_folds.append(rmse)
+        r2_folds.append(r2)
+        r2a_folds.append(r2a)
+
+    return {
+        "rmse_mean": np.mean(rmse_folds),
+        "rmse_std":  np.std(rmse_folds, ddof=1),
+        "r2_mean":   np.mean(r2_folds),
+        "r2a_mean":  np.mean(r2a_folds)
+    }
+
+# Configuración de la validación cruzada interior
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+# ─────────────────────────────────────────────────────────────────────
+# 6. EVALUACIÓN UNIVARIABLE  (CV + AIC)
+# ─────────────────────────────────────────────────────────────────────
+resultados = []
+
+for idx_band, b in enumerate(bandas):
+    X_train_band = X_train_full[:, idx_band].reshape(-1, 1)
+
+    # 6.1  CV
+    stats_cv = cv_metrics(X_train_band, y_train_full, kf)
+
+    # 6.2  AIC en todo el 80 %
+    modelo_tmp = LinearRegression().fit(X_train_band, y_train_full)
+    aic_val    = aic_gauss(modelo_tmp, X_train_band, y_train_full)
+
+    resultados.append({
+        "Banda":     b,
+        "AIC_train": aic_val,
+        "RMSE_CV":   stats_cv["rmse_mean"],
+        "CV_std":    stats_cv["rmse_std"],
+        "R2_CV":     stats_cv["r2_mean"],
+        "R2aj_CV":   stats_cv["r2a_mean"]
+    })
+
+df_res = (
+    pd.DataFrame(resultados)
+      #   PRIMER CRITERIO: AIC  ▸  SEGUNDO: RMSE_CV
+      .sort_values(["AIC_train", "RMSE_CV"])
+      .reset_index(drop=True)
+      .round(4)
+)
+
+print("\nComparación banda-a-banda (ordenada por AIC, luego RMSE_CV):\n")
+print(df_res.to_string(index=False))
+
+# ─────────────────────────────────────────────────────────────────────
+# 7. BANDA GANADORA  →  EVALUACIÓN HOLD-OUT
+# ─────────────────────────────────────────────────────────────────────
+best_band = df_res.loc[0, "Banda"]
+idx_best  = bandas.index(best_band)
+
+X_train_best = X_train_full[:, idx_best].reshape(-1, 1)
+X_test_best  = X_test_full[:,  idx_best].reshape(-1, 1)
+
+best_model = LinearRegression().fit(X_train_best, y_train_full)
+y_pred_test = best_model.predict(X_test_best)
+
+rmse_test = np.sqrt(mean_squared_error(y_test_full, y_pred_test))
+r2_test   = r2_score(y_test_full, y_pred_test)
+
+print(f"\n────────  HOLD-OUT (20 %)  ─────────")
+print(f"Banda ganadora: {best_band}")
+print(f"RMSE_test  = {rmse_test:.3f}")
+print(f"R²_test    = {r2_test:.3f}")
+
+```
+
+
+::: {.callout-note title="Conclusión sobre la selección de bandas con AIC"}
+
+Al incorporar validación cruzada para evaluar la selección univariable por banda en escala logarítmica, la banda B06 se mantiene como la mejor candidata, con el AIC más bajo y el RMSE promedio más pequeño en CV (aprox. 0.31).
+
+Sin embargo, los valores de R² ajustado en CV son negativos para todas las bandas, lo que indica que el modelo lineal simple no logra explicar bien la variabilidad fuera de la muestra, sugiriendo un ajuste pobre o posible falta de linealidad real en los datos.
+
+La evaluación final en el conjunto hold-out (20 %) confirma esta baja capacidad predictiva, con un RMSE_test de 0.491 y un R²_test negativo (-0.291), lo que indica que el modelo predice peor que un modelo que simplemente promedie los datos.
+
+En resumen, aunque B06 es la banda más prometedora según los criterios AIC y RMSE en entrenamiento y validación interna, la baja performance en datos nuevos apunta a la necesidad de modelos más complejos, combinaciones multivariables o transformaciones adicionales para mejorar la predicción.
+
+:::
+
+
+
+### Selección de bandas con Forward Selection basado en AIC
+
+En esta etapa realizo una selección de variables (bandas espectrales) combinadas utilizando un método de **Forward Selection** guiado por el criterio de información de Akaike (AIC). Este método comienza con un modelo vacío e incorpora progresivamente la banda que produce la mayor mejora (reducción) en el AIC, deteniéndose cuando no se consigue una mejora significativa.
+
+La selección se realiza sobre datos transformados en escala logarítmica para estabilizar varianzas y linealizar relaciones. Además, se valida el desempeño del modelo en cada paso mediante validación cruzada (5 folds), evaluando métricas como RMSE y R² en escala original para tener una idea más realista del ajuste.
+
+Finalmente, se evalúa el modelo seleccionado en un conjunto independiente de test (20 % de los datos) para estimar su capacidad predictiva fuera de muestra. También se presenta la ecuación final en escala log-log y en escala original para facilitar la interpretación.
+
+
+```{python}
+#|code-fold: true
+# ─────────────────────────────────────────────────────────────────────
+# 0 · LIBRERÍAS
+# ─────────────────────────────────────────────────────────────────────
+import pandas as pd
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+# ─────────────────────────────────────────────────────────────────────
+# 1 · CARGAR Y PRE-PROCESAR
+# ─────────────────────────────────────────────────────────────────────
+df     = pd.read_csv("datos/datos_sol_sus_acolite.csv")
+bandas = [c for c in df.columns if c.startswith("B")]
+
+mask   = (df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)
+df     = df.loc[mask].copy()
+
+df["log_sol_sus"] = np.log(df["sol_sus"])
+for b in bandas:
+    df[f"log_{b}"] = np.log(df[b])
+
+log_cols = [f"log_{b}" for b in bandas]
+X_full   = df[log_cols].values
+y_full   = df["log_sol_sus"].values          # todavía en log
+
+# ─────────────────────────────────────────────────────────────────────
+# 2 · HOLD-OUT 80 / 20  (orden intacto → shuffle=False)
+# ─────────────────────────────────────────────────────────────────────
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X_full, y_full, test_size=0.20, shuffle=False
+)
+
+# ─────────────────────────────────────────────────────────────────────
+# 3 · FUNCIONES AUXILIARES
+# ─────────────────────────────────────────────────────────────────────
+def aic_gauss(model, X, y):
+    n = len(y)
+    k = X.shape[1] + 1
+    rss = np.sum((y - model.predict(X))**2)
+    return n * np.log(rss / n) + 2 * k
+
+def r2_adj(r2, n, p):
+    return 1 - (1 - r2) * (n - 1) / (n - p - 1)
+
+def cv_metrics(Xm, ym, cv):
+    """
+    Devuelve métricas en ESCALA ORIGINAL para 5-fold CV:
+      · rmse_mean, rmse_std, r2_mean, r2a_mean
+    """
+    model = LinearRegression()
+    rmse_f, r2_f = [], []
+
+    for tr_idx, vl_idx in cv.split(Xm):
+        model.fit(Xm[tr_idx], ym[tr_idx])          # log-modelo
+        pred_log = model.predict(Xm[vl_idx])
+
+        # → escala original
+        y_val_orig   = np.exp(ym[vl_idx])
+        pred_orig    = np.exp(pred_log)
+
+        rmse_f.append(np.sqrt(mean_squared_error(y_val_orig, pred_orig)))
+        r2_f  .append(r2_score(y_val_orig, pred_orig))
+
+    r2_mean = np.mean(r2_f)
+    r2a_mean = r2_adj(r2_mean, len(ym), Xm.shape[1])
+    return {
+        "rmse_mean": np.mean(rmse_f),
+        "rmse_std":  np.std(rmse_f, ddof=1),
+        "r2_mean":   r2_mean,
+        "r2a_mean":  r2a_mean
+    }
+
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+# ─────────────────────────────────────────────────────────────────────
+# 4 · FORWARD-SELECTION GUIADO POR AIC
+# ─────────────────────────────────────────────────────────────────────
+remain, select, best_aic, hist = list(range(len(bandas))), [], np.inf, []
+
+while remain:
+    best_cand = None
+    for idx in remain:
+        cols = select + [idx]
+        mdl  = LinearRegression().fit(X_tr[:, cols], y_tr)
+        aic  = aic_gauss(mdl, X_tr[:, cols], y_tr)
+        if best_cand is None or aic < best_cand[0]:
+            best_cand = (aic, idx)
+
+    # mejora ≥ 2 unidades
+    if best_cand[0] + 2 < best_aic:
+        best_aic = best_cand[0]
+        select.append(best_cand[1])
+        remain.remove(best_cand[1])
+
+        stats = cv_metrics(X_tr[:, select], y_tr, kf)
+        hist.append({
+            "Paso": len(select),
+            "Añadido": bandas[best_cand[1]],
+            "AIC": round(best_aic, 3),
+            "RMSE_CV": round(stats["rmse_mean"], 3),
+            "CV_std":  round(stats["rmse_std"], 3),
+            "R2_CV":   round(stats["r2_mean"], 3),
+            "R2aj_CV": round(stats["r2a_mean"], 3)
+        })
+    else:
+        break
+
+hist_df = pd.DataFrame(hist)
+print("\nHistorial forward-AIC:")
+print(hist_df)
+
+sel_b = [bandas[i] for i in select]
+print(f"\nBandas finales seleccionadas: {sel_b}")
+
+# ─────────────────────────────────────────────────────────────────────
+# 5 · AJUSTE FINAL Y MÉTRICAS TEST (ORIGINAL)
+# ─────────────────────────────────────────────────────────────────────
+Xtr_sel = X_tr[:, select]
+Xte_sel = X_te[:, select]
+
+final_model = LinearRegression().fit(Xtr_sel, y_tr)
+
+# → escala original para test
+pred_test_orig = np.exp(final_model.predict(Xte_sel))
+y_test_orig    = np.exp(y_te)
+
+rmse_test = np.sqrt(mean_squared_error(y_test_orig, pred_test_orig))
+mae_test  = mean_absolute_error(y_test_orig, pred_test_orig)
+r2_test   = r2_score(y_test_orig, pred_test_orig)
+
+# ─────────────────────────────────────────────────────────────────────
+# 6 · ECUACIÓN FINAL (formato fracción cuando hay exponentes negativos)
+# ─────────────────────────────────────────────────────────────────────
+interc  = final_model.intercept_
+coefs   = final_model.coef_
+
+pos_terms = [f"{b}^{c:.4f}"      for b, c in zip(sel_b, coefs) if c >= 0]
+neg_terms = [f"{b}^{-c:.4f}"     for b, c in zip(sel_b, coefs) if c < 0]
+
+k_factor  = math.exp(interc)
+numerator = " * ".join(pos_terms) if pos_terms else "1"
+denominator = " * ".join(neg_terms)
+
+print("\nEcuación en escala log-log:")
+log_eq = [f"{interc:+.4f}"] + [
+    f"{coefs[i]:+0.4f}·log({sel_b[i]})" for i in range(len(sel_b))
+]
+print("log(sol_sus) = " + " ".join(log_eq))
+
+print("\nEscala original:")
+if denominator:
+    print(f"sol_sus_orig = {k_factor:.2f} · ({numerator}) / ({denominator})")
+else:
+    print(f"sol_sus_orig = {k_factor:.2f} · {numerator}")
+
+# ─────────────────────────────────────────────────────────────────────
+# 7 · TABLA FINAL DE MÉTRICAS
+# ─────────────────────────────────────────────────────────────────────
+final_row = {
+    "Bandas": "+".join(sel_b),
+    "AIC_train": round(best_aic, 3),
+    "RMSE_CV":   round(hist[-1]["RMSE_CV"], 3),
+    "CV_std":    round(hist[-1]["CV_std"], 3),
+    "R²_CV":     round(hist[-1]["R2_CV"], 3),
+    "R²aj_CV":   round(hist[-1]["R2aj_CV"], 3),
+    "RMSE_test": round(rmse_test, 3),
+    "MAE_test":  round(mae_test, 3),
+    "R²_test":   round(r2_test, 3)
+}
+
+print("\n──────── TABLA FINAL ────────")
+print(pd.DataFrame([final_row]).to_string(index=False))
+
+# ─────────────────────────────────────────────────────────────────────
+# 8 · GRÁFICO REAL vs PREDICHO (train + test)
+# ─────────────────────────────────────────────────────────────────────
+# Train → original
+pred_train_orig = np.exp(final_model.predict(Xtr_sel))
+y_train_orig    = np.exp(y_tr)
+
+plt.figure(figsize=(6, 6))
+plt.scatter(y_train_orig, pred_train_orig,
+            alpha=0.7, label="Train")
+plt.scatter(y_test_orig, pred_test_orig,
+            alpha=0.7, marker='s', edgecolors='k', label="Test")
+
+# línea y = x
+mn, mx = min(y_train_orig.min(), y_test_orig.min()), \
+         max(y_train_orig.max(), y_test_orig.max())
+plt.plot([mn, mx], [mn, mx], "--", color="gray")
+
+plt.xlabel("Sólidos suspendidos observados")
+plt.ylabel("Sólidos suspendidos predichos")
+plt.title("Ajuste modelo (escala original)")
+
+# ecuación en caja
+eq_line = rf"$\hat{{y}} = {k_factor:.1f}"
+for b, c in zip(sel_b, coefs):
+    eq_line += rf"\times {b}^{{{c:.2f}}}"
+eq_line += "$"
+plt.text(0.05, 0.95, eq_line,
+         transform=plt.gca().transAxes,
+         fontsize=8, va="top",
+         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", lw=0.5))
+
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+```
+
+
+::: {.callout-note title="Conclusión del modelo seleccionado"}
+
+El algoritmo de Forward Selection identificó a las bandas B06 y B02 como las más relevantes para predecir los sólidos suspendidos en escala log-log. El modelo final presenta un buen desempeño, con un RMSE_test de 16.69 y un R²_test de 0.86 en escala original, lo que indica una capacidad predictiva adecuada sobre datos no vistos. Además, la ecuación obtenida permite expresar la variable objetivo en función de las bandas seleccionadas de forma clara y directa.
+
+Aunque el ajuste es satisfactorio, sería conveniente en futuros análisis explorar modelos no lineales o técnicas multivariadas más complejas, como regresión regularizada o árboles de decisión, que podrían captar relaciones más sutiles entre variables. 
+
+:::
