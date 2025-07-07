@@ -27,6 +27,7 @@ keywords:
   - UTN
   - FRRe
   - Quarto
+  - Sólidos Suspendidos 
 jupyter: python3
 execute:
   echo: true
@@ -34,7 +35,7 @@ execute:
 
 ## Sólidos suspendidos totales<span style="font-weight:normal; font-size: 1rem">, por Vera Geneyer (https://github.com/VeraGeneyer)</span> {toc-text="Sólidos suspendidos totales"}
 
-Los sólidos suspendidos totales (TSM): es la cantidad de materia en suspensión en el agua, que incluye plancton, minerales, arena, y microorganismos. Se determinan como el residuo no filtrable de una muestra de agua. Niveles altos (TSM) pueden reducir la transparencia del agua, limitar la luz y y transportar sustancias tóxicas, afectando la vida acuática y la calidad del agua.
+Los sólidos suspendidos totales (TSM) son la cantidad de materia en suspensión en el agua, que incluye plancton, minerales, arena, y microorganismos. Se determinan como el residuo no filtrable de una muestra de agua. Niveles altos (TSM) pueden reducir la transparencia del agua, limitar la luz y y transportar sustancias tóxicas, afectando la vida acuática y la calidad del agua.
 Este parámetro, medido mediante sensores remotos, nos da información sobre el estado físico del cuerpo de agua y están relacionados con factores como la humedad, temperatura y entre otros, que es vital para detectar riesgos al ecosistema y cumplir con las normas ambientales.
 
 ### Métodos tradicionales
@@ -121,12 +122,18 @@ El aprendizaje automático es esencial para mejorar la precisión y rapidez en e
 
 
 
-## Desarrollo del modelo con **Python**
+## Desarrollo integral del algoritmo
+
+En esta sección describo el proceso completo para crear un modelo que estima los sólidos suspendidos totales (SST) usando datos satelitales y de campo, desde la preparación de datos hasta la validación del algoritmo.
 
 
-### Procesamiento de datos (Sen2Cor)
 
-Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada con el objetivo de analizar el comportamiento del parámetro **sólidos suspendidos (sol_sus)** en una región específica (pixel `3x3`). Para esto, utilicé el lenguaje Python y la biblioteca `pandas`, que resulta particularmente eficiente para el manejo de estructuras tabulares. 
+### Procesamiento inicial de datos con Sen2Cor
+
+Se detalla el procedimiento técnico que implementé para procesar información ambiental georreferenciada, con el objetivo de analizar el comportamiento del parámetro **sólidos suspendidos (sol_sus)** en una región específica del estudio (píxel `3x3`). 
+
+Para esto, utilicé el lenguaje Python y la biblioteca `pandas`, que resulta particularmente eficiente para el manejo y transformación de datos en estructuras tabulares. Este paso fue fundamental para preparar los datos y asegurar su calidad antes del análisis.
+
 
 #### Carga de datos
 
@@ -168,7 +175,7 @@ display(lab_df.head())
 
 :::
 
-#### Filtrar el parámetro 'sol_sus'
+#### Filtrado del parámetro sólidos suspendidos ('sol_sus')
 
 En el conjunto de datos del laboratorio `lab_df`, hay múltiples parámetros medidos (como pH, turbidez, etc.). En este caso, me interesa trabajar solamente con los datos de **sólidos suspendidos**, identificado como `"sol_sus"` en la columna `param`. Este filtrado selectivo lo realicé para limitar el análisis al fenómeno físico-químico de interés.
 
@@ -199,7 +206,7 @@ display(sol_sus_df.head())
 :::
 
 
-#### Transformar la columna banda en columnas individuales
+#### Reorganización de datos: pivotar bandas en columnas individuales
 
 En este paso, convierto los valores únicos de la columna `banda` (como `B01`, `B02`, etc.) en nombres de columnas. Cada nueva columna contendrá los valores del parámetro `reflect` correspondientes a esa banda en particular. Esta operación se realiza antes de unir con los valores de `sol_sus`, ya que el valor de reflectancia depende de la banda, mientras que `sol_sus` es un dato independiente que se asignará luego por punto, fecha y ubicación.
 
@@ -234,7 +241,7 @@ display(gis_pivot.head())
 :::
 
 
-#### Combinar datos geoespaciales y de laboratorio
+#### Unión de datos geoespaciales con datos de laboratorio
 
 Una vez que las bandas han sido transformadas en columnas, combino esta tabla con los valores de sólidos suspendidos (`sol_sus`) provenientes del laboratorio. La combinación se hace usando las columnas `fecha`, `latitud` y `longitud`, que permiten identificar los datos correspondientes a un mismo punto geográfico y temporal.
 
@@ -269,7 +276,7 @@ display(df_merged.head())
 :::
 
 
-#### Filtrado espacial por pixel
+#### Filtrado espacial por píxel de interés (3x3)
 
 Luego de combinar los datos, aplico un filtrado adicional al DataFrame sobre la columna `pixel` para conservar únicamente las filas correspondientes al área geográfica designada como `"3x3"`. Este paso reduce el dominio de análisis y permite concentrarse en una región de estudio concreta.
 
@@ -293,7 +300,7 @@ display(df_pixel_3x3.head())
 :::
 
 
-#### Guardar el archivo final
+#### Exportación de datos procesados
 
 Finalmente, guardo el resultado como un nuevo archivo .csv dentro de la carpeta datos. 
 
@@ -318,11 +325,14 @@ df_pixel_3x3.to_csv('datos/datos_sol_sus_pixel_3x3.csv', index=False)
 
 
 
-### Procesamiento de datos (ACOLITE)
+### Aplicación del procesamiento a datos ACOLITE
 
-A continuación teniendo la misma lógica de procesamiento que aplique antes, pero usando el nuevo archivo `base_de_datos_gis_acolite.csv`.
+A continuación, repetí el mismo procedimiento de procesamiento aplicado anteriormente, esta vez utilizando el archivo `base_de_datos_gis_acolite.csv`, generado con el procesador atmosférico **ACOLITE**.
+
+ACOLITE es una herramienta diseñada específicamente para corregir efectos atmosféricos en ambientes acuáticos, a partir de imágenes satelitales. Gracias a que la estructura del archivo es similar al utilizado anteriormente (Sen2Cor), fue posible aplicar la misma lógica de filtrado, transformación y combinación para preparar los datos de reflectancia.
 
 ```{python}
+#|code-fold: true
 import pandas as pd
 
 # 1. Cargar archivos CSV 
@@ -353,14 +363,17 @@ df_merged = pd.merge(
 # 5. Guardar resultado final
 df_merged.to_csv('datos/datos_sol_sus_acolite.csv', index=False)
 
+# 6. Mostrar muestra del resultado
+print("Primeras filas del DataFrame resultante:")
+display(df_merged.head())
+
 ```
 
 
 
-### Análisis de Regresión Lineal
+### Modelo base · Regresión lineal simple
 
-En este análisis aplico un modelo de regresión lineal simple para estudiar la relación entre la **reflectancia** y los **sólidos suspendidos**, utilizando datos experimentales. La regresión lineal es una técnica fundamental del aprendizaje automático supervisado que nos permite predecir un valor continuo basado en una o más variables independientes. A lo largo de este documento, se explican paso a paso las acciones realizadas y los conceptos clave para comprender y replicar este análisis.
-
+En este análisis aplico un modelo de **regresión lineal simple** para estudiar la relación entre la **reflectancia** (banda `B01`) y la concentración de **sólidos suspendidos (sol_sus)**, utilizando datos experimentales. La regresión lineal es una técnica fundamental del aprendizaje automático supervisado que permite predecir un valor continuo a partir de una o más variables independientes, y suele emplearse como modelo base frente a enfoques más complejos. A lo largo de esta sección, detallo paso a paso las acciones realizadas y explico los conceptos clave para comprender y replicar este análisis.
 
 #### Importar librerías
 
@@ -418,14 +431,14 @@ display(datos.head())
 
 :::
 
-#### Seleccionar variables y dividir en conjuntos
+#### Definir variables y particionar el conjunto
 
 Selecciono las variables relevantes: `B01` como variable independiente y `sol_sus` como variable dependiente. Luego divido el conjunto en dos subconjuntos: uno para entrenar el modelo y otro para probarlo, lo cual sirve para evaluar su capacidad de generalización.
 
 ```{python}
 # Selección de variables
-X = datos[["B01"]]
-y = datos["sol_sus"]
+X = datos[["B01"]]           # variable independiente
+y = datos["sol_sus"]         # variable dependiente
 
 # División en entrenamiento y validación
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
@@ -500,7 +513,8 @@ print("El coeficiente de determinación (R²) es:", round(p_r2, 3))
 
 :::
 
-#### Visualizar el modelo
+
+#### Visualizar resultados
 
 Finalmente, se visualiza gráficamente la relación entre reflectancia y sólidos suspendidos, tanto en el conjunto de entrenamiento como en el de prueba. Esto ayuda a interpretar de forma visual cómo se ajusta el modelo a los datos reales.
 
@@ -547,9 +561,12 @@ plt.show()
 :::
 
 
-### Análisis de regresión por banda
 
-Con el objetivo de profundizar el análisis, se evalúa la relación entre los sólidos suspendidos y cada una de las bandas espectrales disponibles de forma individual. Para ello, se entrena un modelo de regresión lineal simple por cada banda, utilizando los mismos datos experimentales. Este enfoque permite comparar el desempeño predictivo de cada banda por separado mediante métricas como el coeficiente de determinación R², su versión ajustada y el error cuadrático medio (RMSE).
+### Regresión lineal individual por banda
+
+Con el fin de profundizar el análisis, evalué la relación entre los **sólidos suspendidos (sol_sus)** y cada **banda espectral** por separado. Para esto, entrené un modelo de regresión lineal simple usando los mismos datos experimentales para cada banda.  
+
+Con este enfoque comparo la capacidad predictiva individual de cada banda mediante las métricas `R²`, `R²` ajustado y el error cuadrático medio (`RMSE`). Este análisis me permite identificar qué bandas tienen mejor relación lineal con los sólidos suspendidos y sentar la base para probar modelos más complejos.
 
 ```{python}
 #|code-fold: true
@@ -560,6 +577,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import math
+from IPython.display import display
 
 # Cargar datos
 datos = pd.read_csv('datos/datos_sol_sus_acolite.csv')
@@ -625,37 +643,68 @@ plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.show()
 
 # Tabla resumen
-df_resultados = pd.DataFrame(resultados).sort_values("R²", ascending=False).reset_index(drop=True)
-print("Tabla resumen de métricas por banda:")
-display(df_resultados.style.hide(axis="index"))
+df_resultados = (
+    pd.DataFrame(resultados)
+      .round(3)
+      .sort_values("R²", ascending=False)   # la mejor banda queda arriba
+      .reset_index(drop=True)
+)
+
+def style_metrics(df: pd.DataFrame, caption: str):
+    sty = (
+        df.style
+          .format(precision=3)
+    )
+
+    # Ocultar índice según versión de pandas
+    if hasattr(sty, "hide"):
+        sty = sty.hide(axis="index")
+    else:
+        sty = sty.hide_index()
+
+    # Agregar título y estilo del título
+    sty = sty.set_caption(caption)
+    sty = sty.set_table_styles([{
+        "selector": "caption",
+        "props": [
+            ("caption-side", "top"),
+            ("font-weight",  "bold"),
+            ("margin-bottom", "0.5em")
+        ]
+    }], overwrite=False)
+
+    return sty
+
+# Mostrar tabla  
+display(style_metrics(df_resultados,
+                      "Resumen de métricas por banda (entrenamiento)"))
 
 ```
 
 
 ::: {.callout-note title="Conclusiones del análisis por banda"}
 
-Al aplicar regresión lineal simple a cada banda espectral por separado, se observó que ninguna logra predecir con precisión los sólidos suspendidos. Las bandas B05, B06 y B07 fueron las que mejor se desempeñaron, pero con un R² apenas superior al 18 %, lo que indica que explican muy poca variabilidad. Además, los errores (RMSE) siguen siendo altos en relación con los valores reales.
+Los resultados muestran que ninguna banda espectral logra predecir con alta precisión los sólidos suspendidos mediante un modelo lineal simple.  
 
-Esto sugiere que la relación entre reflectancia y sólidos suspendidos no es lineal en escala natural, y que sería necesario probar modelos más complejos. En próximos pasos, pienso aplicar transformaciones logarítmicas y combinaciones de bandas para mejorar el ajuste.
+Las bandas **B05**, **B06** y **B07** presentan los mejores valores de `R²` (alrededor de 0.18), lo que indica que explican menos del 20 % de la variabilidad en los datos. El resto de las bandas tienen un desempeño aún menor, con errores (`RMSE`) relativamente altos en comparación con los valores observados.  
+
+Esto sugiere que la relación entre reflectancia y sólidos suspendidos no es lineal en escala natural y que será necesario explorar modelos más complejos o transformaciones de datos para mejorar la predicción.
 
 :::
 
 
 
-### Análisis de regresión por banda aplicando logaritmo a las variables
+### Análisis de regresión lineal con transformación logarítmica
 
-En esta etapa del análisis, aplico una transformación logarítmica natural a las variables de reflectancia y sólidos suspendidos antes de ajustar los modelos de regresión lineal. Esta transformación es útil para:
+En esta etapa aplico una transformación logarítmica natural a las variables de reflectancia y sólidos suspendidos antes de ajustar los modelos de regresión lineal. Esta transformación permite estabilizar la varianza, linealizar relaciones no lineales y reducir el impacto de valores extremos. 
 
-- Estabilizar la varianza y reducir la heterocedasticidad.
+El procedimiento es similar al análisis anterior, pero antes de entrenar el modelo se aplica `log(x)` a las columnas correspondientes. Para evitar problemas con valores cero, estos se reemplazan por `NaN` y se excluyen del análisis. Posteriormente, entreno modelos de regresión lineal simple por banda usando las variables transformadas.  
 
-- Linealizar relaciones no lineales entre variables.
-
-- Evitar que valores extremos influyan excesivamente en el modelo.
-
-El procedimiento es similar al análisis anterior, pero antes de entrenar el modelo se aplica `log(x)` a las columnas correspondientes. Para evitar problemas con ceros en los datos, estos se reemplazan por `NaN` y se eliminan del análisis.
+El desempeño de cada modelo se evalúa mediante métricas en escala logarítmica (`R²_log`, `RMSE_log`) y en escala original, facilitando la comparación y la interpretación de resultados.
 
 
 ```{python}
+#| code-fold: true
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -663,127 +712,132 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import math
+import seaborn as sns
+from IPython.display import display
 
-# 1. Cargar datos 
+# 1. ── Cargar datos ────────────────────────────────────────────────
 datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
 bandas = [c for c in datos.columns if c.startswith("B")]
 
-# 2.  Filtrar positivos (requisito para log) 
-mask_pos = (datos["sol_sus"] > 0) & (datos[bandas] > 0).all(axis=1)
-datos_log = datos.loc[mask_pos].copy()
+# 2. ── Filtrar positivos (requisito para log) ──────────────────────
+mask_pos   = (datos["sol_sus"] > 0) & (datos[bandas] > 0).all(axis=1)
+datos_log  = datos.loc[mask_pos].copy()
 
-# 3.Transformar a log-natural (para entrenar) 
+# 3. ── Transformar a log-natural ──────────────────────────────────
 datos_log["log_sol_sus"] = np.log(datos_log["sol_sus"])
 for b in bandas:
     datos_log[f"log_{b}"] = np.log(datos_log[b])
 
 log_bandas = [f"log_{b}" for b in bandas]
 
-# 4. Split train / test (test se descarta aquí) 
+# 4. ── Train / test split (descartamos test) ───────────────────────
 X_total = datos_log[log_bandas]
 y_total = datos_log["log_sol_sus"]
 X_train, _, y_train, _ = train_test_split(
-    X_total, y_total, test_size=0.2, shuffle=False
-)
+    X_total, y_total, test_size=0.2, shuffle=False)
 
-# 5. Funciones de métricas 
+# 5. ── Funciones de métricas ───────────────────────────────────────
 def metrics_log(model, X, y):
-    """Métricas sobre los datos en log (las que ya tenías)."""
     y_pred = model.predict(X)
-    rmse = np.sqrt(mean_squared_error(y, y_pred))
-    r2   = r2_score(y, y_pred)
-    n, p = X.shape
+    rmse   = np.sqrt(mean_squared_error(y, y_pred))
+    r2     = r2_score(y, y_pred)
+    n, p   = X.shape
     r2_adj = 1 - ((1 - r2) * (n - 1)) / (n - p - 1)
     return rmse, r2, r2_adj
 
 def metrics_original(model, X, y):
-    """
-    Idem, pero después de volver a la escala original:
-       sol_sus_pred  = exp(ŷ_log)
-       sol_sus_true  = exp(y_log)
-    """
     y_pred_log  = model.predict(X).ravel()
     y_pred_orig = np.exp(y_pred_log)
     y_true_orig = np.exp(y.values)
-    rmse = np.sqrt(mean_squared_error(y_true_orig, y_pred_orig))
-    r2   = r2_score(y_true_orig, y_pred_orig)
-    n, p = X.shape
+    rmse   = np.sqrt(mean_squared_error(y_true_orig, y_pred_orig))
+    r2     = r2_score(y_true_orig, y_pred_orig)
+    n, p   = X.shape
     r2_adj = 1 - ((1 - r2) * (n - 1)) / (n - p - 1)
     return rmse, r2, r2_adj
 
-# 6.  Entrenar un modelo por banda y registrar métricas 
-resultados = []           # para log
-resultados_nolog = []     # para escala original
-lineas_log = {}           # (x, ŷ_log) para graficar en log-log
-lineas_nolog = {}         # (x_original, ŷ_original) para graficar sin log
+# 6. ── Entrenar un modelo por banda ────────────────────────────────
+resultados, resultados_nolog = [], []
+lineas_log, lineas_nolog     = {}, {}
 
 for b, lb in zip(bandas, log_bandas):
     Xtr = X_train[[lb]]
     reg = LinearRegression().fit(Xtr, y_train)
 
-    # ── Métricas en log
+    # Métricas en log
     rmse_l, r2_l, r2a_l = metrics_log(reg, Xtr, y_train)
-    resultados.append({"Banda": b, "RMSE_log": rmse_l,
-                       "R²_log": r2_l, "R²aj_log": r2a_l})
+    resultados.append({"Banda": b, "R²_log": r2_l, 
+                    "R²aj_log": r2a_l, "RMSE_log": rmse_l})
 
-    # ── Métricas en original
+    # Métricas en original
     rmse_o, r2_o, r2a_o = metrics_original(reg, Xtr, y_train)
-    resultados_nolog.append({"Banda": b, "RMSE": rmse_o,
-                             "R²": r2_o, "R²aj": r2a_o})
+    resultados_nolog.append({"Banda": b,
+                             "R²": r2_o, "R²aj": r2a_o, "RMSE": rmse_o})
 
-    # ── Recta ordenada para ambas escalas
-    order = np.argsort(Xtr.values.ravel())
-    x_log_ord   = Xtr.values.ravel()[order]             # log(B)
-    y_pred_log  = reg.predict(Xtr).ravel()[order]       # log(sol_suŝ)
+    # Rectas ordenadas
+    order        = np.argsort(Xtr.values.ravel())
+    x_log_ord    = Xtr.values.ravel()[order]
+    y_pred_log   = reg.predict(Xtr).ravel()[order]
     lineas_log[b] = (x_log_ord, y_pred_log)
 
-    # Para volver a la escala original:
-    x_orig_ord  = np.exp(x_log_ord)                     # B
-    y_pred_orig = np.exp(y_pred_log)                    # sol_suŝ
+    x_orig_ord   = np.exp(x_log_ord)
+    y_pred_orig  = np.exp(y_pred_log)
     lineas_nolog[b] = (x_orig_ord, y_pred_orig)
 
-# 7. DataFrames con métricas
-res_df_log    = (pd.DataFrame(resultados)
-                   .round(3)
-                   .sort_values("RMSE_log")
-                   .reset_index(drop=True))
+# 7. ── DataFrames de métricas ──────────────────────────────────────
+res_df_log   = (pd.DataFrame(resultados)
+                  .round(3)
+                  .sort_values("RMSE_log")
+                  .reset_index(drop=True))
 
-res_df_nolog  = (pd.DataFrame(resultados_nolog)
-                   .round(3)
-                   .sort_values("RMSE")
-                   .reset_index(drop=True))
+res_df_nolog = (pd.DataFrame(resultados_nolog)
+                  .round(3)
+                  .sort_values("RMSE")
+                  .reset_index(drop=True))
 
-# 8.Gráficos *sin* log (escala original)
-n_cols = 3
-n_rows = math.ceil(len(bandas) / n_cols)
+# 8. ── Gráficos en escala original ────────────────────────────────
+n_cols, n_rows = 3, math.ceil(len(bandas) / 3)
 fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 4 * n_rows))
 axes = axes.flatten()
 
 for idx, b in enumerate(bandas):
     ax = axes[idx]
-    # Datos originales de entrenamiento (sin log):
     x_orig = np.exp(X_train[f"log_{b}"])
     y_orig = np.exp(y_train)
     ax.scatter(x_orig, y_orig, alpha=0.6, color="#9D50A6", label="Entrenamiento")
-    # Curva modelo en original:
     ax.plot(*lineas_nolog[b], lw=3, color="#17A77E", label="Modelo")
     ax.set(xlabel=b, ylabel="sol_sus", title=f"Banda {b} (escala original)")
     ax.legend()
     ax.grid(True)
 
-# Si sobran ejes, quitarlos
 for j in range(len(bandas), len(axes)):
     fig.delaxes(axes[j])
 
 plt.tight_layout()
 plt.show()
 
-# 9.  Mostrar tablas de métricas
-print("\nMétricas en **escala log-log** (ordenadas por RMSE_log):\n")
-print(res_df_log.to_string(index=False))
+# 9. ── Función para estilo de tablas ───────────────────────────────
+def style_metrics_sin_gradiente(df: pd.DataFrame, caption: str):
+    sty = (df.style
+             .format(precision=3)
+             # .background_gradient(...) ← quitamos el gradiente
+             .hide(axis="index")
+             .set_caption(caption)
+             .set_table_styles([{
+                 "selector": "caption",
+                 "props": [("caption-side", "top"),
+                           ("font-weight",  "bold"),
+                           ("margin-bottom","0.5em")]
+             }], overwrite=False)
+          )
+    return sty
 
-print("\nMétricas en **escala original** (ordenadas por RMSE):\n")
-print(res_df_nolog.to_string(index=False))
+
+# 10 ── Mostrar tablas con el nuevo estilo pastel ───────────────────────────────
+display(style_metrics_sin_gradiente(res_df_log,
+        "Métricas en escala log‑log (ordenadas por RMSE_log)"))
+
+display(style_metrics_sin_gradiente(res_df_nolog,
+        "Métricas en escala original (ordenadas por RMSE)"))
 
 ```
 
@@ -806,27 +860,31 @@ print(res_df_nolog.to_string(index=False))
 
 ::: {.callout-note title="Conclusión del ajuste log–log por banda"}
 
-Aplicar la transformación logarítmica mejoró notablemente el ajuste respecto al análisis en escala natural. Las bandas B06, B07 y B05 mostraron los mejores resultados, con R²_log cercanos a 0.30 y una reducción del error (RMSE) tanto en escala logarítmica como en la original.
+Los resultados muestran que al aplicar la transformación logarítmica, las bandas **B06**, **B07** y **B05** obtienen los mejores ajustes, con valores de `R²_log` cercanos a 0.30 y errores (`RMSE_log`) más bajos comparados con las demás bandas. Esto indica una mejora en la capacidad predictiva respecto al análisis en escala natural.
 
-Aun así, el desempeño sigue siendo limitado si se usa cada banda por separado. Esto sugiere que para mejorar las predicciones es necesario combinar bandas, aplicar modelos más complejos o probar con índices espectrales derivados.
+Sin embargo, al evaluar las métricas en escala original, el mejor desempeño alcanza un `R²` máximo cercano a 0.20, lo que aún refleja una capacidad limitada para explicar la variabilidad de los sólidos suspendidos utilizando bandas individuales.
+
+Estos resultados sugieren que la transformación logarítmica mejora el modelo, pero que para obtener predicciones más precisas será necesario explorar combinaciones de bandas, índices espectrales o modelos más complejos.
 
 :::
 
 
 
-### Selección de bandas con AIC y desempeño individual
+### Selección de bandas mediante regresión logarítmica y AIC
 
-Para evaluar qué bandas individuales son más relevantes para predecir los sólidos suspendidos, se ajustó un modelo de regresión lineal simple en escala logarítmica para cada banda. Además de calcular el coeficiente de determinación (R²) y el error cuadrático medio (RMSE), se calcula ahora el **AIC (Criterio de Información de Akaike)**, que penaliza la complejidad del modelo. Esto ayuda a decidir si la incorporación de una banda es realmente valiosa o si se está agregando complejidad innecesaria al modelo.
+Para determinar cuáles bandas espectrales aportan más información para predecir sólidos suspendidos, ajusté modelos de regresión lineal simple en escala logarítmica para cada banda individual. Además de las métricas habituales como el coeficiente de determinación (`R²`) y el error cuadrático medio (`RMSE`), utilicé el **Criterio de Información de Akaike (AIC)**. 
 
+El AIC es una medida que evalúa la calidad del modelo penalizando la complejidad: un valor menor indica un mejor equilibrio entre ajuste y simplicidad. Esto ayuda a evitar sobreajuste al no favorecer modelos que mejoran el ajuste sólo por aumentar el número de parámetros sin aportar realmente información útil. Así, el AIC es una herramienta clave para seleccionar las bandas que efectivamente mejoran la predicción sin agregar complejidad innecesaria.
 
 ```{python}
 #|code-fold: true
-# 0. Librerías
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+import seaborn as sns
+from IPython.display import display
 
 # 1. Cargar datos y detectar bandas
 datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
@@ -883,9 +941,9 @@ for b in bandas:
 
     resultados.append({
         "Banda"    : b,
-        "RMSE_log" : rmse_log,
         "R²_log"   : r2_log,
         "R²aj_log" : r2a_log,
+        "RMSE_log" : rmse_log,
         "AIC"      : aic_val
     })
 
@@ -895,190 +953,300 @@ df_log  = (pd.DataFrame(resultados)
              .sort_values("AIC")
              .reset_index(drop=True))
 
-print("\nAIC y métricas en escala log-log (ordenadas por AIC):\n")
-print(df_log.to_string(index=False))
+def style_metrics_sin_gradiente(df: pd.DataFrame, caption: str):
+    sty = (df.style
+             .format(precision=3)
+             .hide(axis="index")  # oculta índice
+             .set_caption(caption)
+             .set_table_styles([{
+                 "selector": "caption",
+                 "props": [("caption-side", "top"),
+                           ("font-weight",  "bold"),
+                           ("margin-bottom", "0.5em")]
+             }], overwrite=False)
+          )
+    return sty
+
+# 9 ── Mostrar tabla con el nuevo estilo pastel AIC ───────────────────────────
+display(style_metrics_sin_gradiente(
+    df_log, "AIC y métricas en escala log‑log (ordenadas por AIC)"
+))
 
 ```
 
 
 ::: {.callout-note title="Conclusión sobre la selección de bandas con AIC"}
 
-Los resultados del AIC coinciden con las métricas de desempeño: las bandas B06 y B07 son las más relevantes para predecir sólidos suspendidos, mostrando los valores más bajos de AIC (-69.2 y -69.1 respectivamente), así como los mejores valores de R²_log (~0.30) y RMSE_log (~0.32).
+Los valores obtenidos muestran que las bandas **B06** y **B07** son las más relevantes para predecir los sólidos suspendidos, ya que presentan los valores más bajos de AIC (-69.24 y -69.19 respectivamente), indicando el mejor equilibrio entre calidad de ajuste y simplicidad del modelo.  
+Estas bandas también exhiben los mejores coeficientes de determinación (`R²_log` alrededor de 0.30) y los menores errores (`RMSE_log` cerca de 0.32).  
 
-Las demás bandas presentan AIC menos favorables, lo que indica que, individualmente, aportan menos información útil y no justifican la complejidad del modelo.
-
-Por lo tanto, para modelos simples basados en una sola banda, B06 y B07 son las candidatas preferentes. Sin embargo, para un mejor desempeño se recomienda evaluar modelos que combinen varias bandas.
+El resto de las bandas tienen valores de AIC menos favorables, lo que sugiere que, individualmente, aportan menos información útil y no justifican la complejidad del modelo. Esto refuerza la idea de que para mejorar las predicciones será necesario combinar varias bandas o explorar modelos más complejos.
 
 :::
 
 
 
-#### Incorporar validación cruzada en la selección de modelo
+#### Selección de banda espectral con validación cruzada 
 
-En esta etapa incorporo una validación cruzada (CV) para evaluar la robustez y generalización del modelo univariable basado en cada banda espectral. La validación cruzada consiste en dividir el conjunto de entrenamiento en varios “folds” o particiones, entrenar el modelo en todas menos una, y validar en la partición restante, repitiendo este proceso rotando las particiones. Esto ayuda a obtener métricas de desempeño más confiables y evitar sobreajuste al conjunto de entrenamiento.
+En esta sección selecciono la banda espectral más adecuada para estimar los **sólidos suspendidos (sol_sus)** usando un modelo de regresión lineal simple en escala logarítmica. A diferencia de análisis anteriores, ahora incorporo una validación cruzada que respeta la estructura temporal de los datos, para asegurar que el modelo sea confiable al aplicarse a nuevas campañas de muestreo.
 
-El flujo completo que implemento es:
-- Dividir el conjunto completo en un 80 % para entrenamiento y un 20 % para prueba final (hold-out).
-- En el 80 % de entrenamiento, aplicar validación cruzada K-Fold (5 folds) para evaluar RMSE y coeficiente de determinación ajustado (R² ajustado) de cada banda.
-- Calcular también el AIC para cada modelo univariable, utilizando el conjunto completo de entrenamiento (80 %) para penalizar complejidad.
-- Ordenar las bandas por AIC y, en caso de empate, desempatar usando el promedio de RMSE de la validación cruzada.
-- Finalmente, con la banda ganadora entrenar el modelo sobre todo el 80 % y evaluar su desempeño en el conjunto de prueba (hold-out 20 %).
+**¿Por qué validación Leave-One-Group-Out (LOGO)?**
 
-Esta estrategia permite seleccionar la banda más relevante no solo por la bondad del ajuste, sino también considerando la estabilidad y capacidad predictiva en datos no vistos, ofreciendo una selección más robusta y realista para modelos futuros.
+Los datos provienen de campañas realizadas en diferentes fechas (`fecha`). Esto genera grupos independientes, ya que las condiciones del río pueden variar entre campañas. Usar una validación cruzada tradicional como K-Fold o Shuffle Split mezclaría muestras de una misma campaña entre entrenamiento y prueba, lo que daría una estimación demasiado optimista del desempeño.
+
+En cambio, `LeaveOneGroupOut` (LOGO) deja **una fecha completa afuera en cada iteración**, lo que permite evaluar si el modelo puede **generalizar a campañas no vistas**. Esta estrategia evita **filtraciones de información** (_data leakage_) entre los datos de entrenamiento y validación, y resulta mucho más realista en contextos ambientales, donde el objetivo es predecir nuevas campañas a partir de mediciones anteriores.
+
+**Descripción del procedimiento:**
+
+- **Preprocesamiento**: aplico `log()` a las bandas y a la variable objetivo (`sol_sus`) y elimino ceros, para linearizar y estabilizar la relación.
+
+- **Modelado**: ajusto un modelo de regresión lineal simple por cada banda, normalizando los datos con `StandardScaler` (pipeline). Para cada modelo calculo las métricas de validación cruzada: `RMSE`, `R²`, `R² ajustado` y el `AIC`, que penaliza la complejidad del modelo.
+
+- **Selección**: ordeno las bandas por AIC y RMSE, y elijo la mejor.
+
+- **Evaluación final**: 
+
+  - Estimo el desempeño real sobre la campaña más reciente (test).
+
+  - Realizo un análisis **bootstrap** (500 réplicas) para obtener intervalos de confianza de los parámetros y métricas.
+
+  - Muestro gráficos de predicho vs observado en escala log y original.
+
+Este enfoque no solo me permite elegir la **banda más informativa**, sino que también evalúa la **estabilidad** del modelo y su capacidad de **generalizar en el tiempo**, algo clave para el monitoreo operativo de calidad de agua.
 
 ```{python}
 #|code-fold: true
-# ─────────────────────────────────────────────────────────────────────
-# 0. LIBRERÍAS
-# ─────────────────────────────────────────────────────────────────────
-import pandas as pd
+# -------------------------------------------------------------
+# 0 · LIBRERÍAS
 import numpy as np
+import pandas as pd
+from pathlib import Path
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.utils import resample
+from IPython.display import display, Markdown
 
-# ─────────────────────────────────────────────────────────────────────
-# 1. CARGAR DATOS Y DETECTAR BANDAS
-# ─────────────────────────────────────────────────────────────────────
-datos  = pd.read_csv("datos/datos_sol_sus_acolite.csv")
-bandas = [c for c in datos.columns if c.startswith("B")]
+# ----------  ESTÉTICA TABLAS (sin gradiente) ------------------
+def style_table(df, caption):
+    return (df.style
+              .format(precision=3)
+              .hide(axis="index")
+              .set_caption(caption)
+              .set_table_styles([
+                 {"selector": "caption",
+                  "props": [("caption-side", "top"),
+                            ("font-weight",  "bold"),
+                            ("margin-bottom","0.5em"),
+                            ("text-align","left")]},
+                 {"selector": "th",
+                  "props": [("text-align","center")]},
+                 {"selector": "td",
+                  "props": [("text-align","right"),
+                            ("padding","0.25em 0.5em")]}
+              ], overwrite=False))
 
-# ─────────────────────────────────────────────────────────────────────
-# 2. FILTRAR CASOS > 0  (requisito de log)
-# ─────────────────────────────────────────────────────────────────────
-mask_pos = (datos["sol_sus"] > 0) & (datos[bandas] > 0).all(axis=1)
-datos_log = datos.loc[mask_pos].copy()
+# -------------------------------------------------------------
+# 1 · CARGA Y PREPARACIÓN
+csv_file = Path("datos/datos_sol_sus_acolite.csv")
+df = pd.read_csv(csv_file).drop_duplicates()
+df["fecha"] = pd.to_datetime(df["fecha"])
 
-# ─────────────────────────────────────────────────────────────────────
-# 3. TRANSFORMACIÓN LOGARÍTMICA
-# ─────────────────────────────────────────────────────────────────────
-datos_log["log_sol_sus"] = np.log(datos_log["sol_sus"])
+bandas = [c for c in df.columns if c.startswith("B")]
+mask   = (df["sol_sus"]>0) & (df[bandas]>0).all(axis=1)
+df     = df.loc[mask].copy()
+
+df["log_sol_sus"] = np.log(df["sol_sus"])
+for b in bandas: df[f"log_{b}"] = np.log(df[b])
+
+log_cols = [f"log_{b}" for b in bandas]
+X_total  = df[log_cols];     y_total = df["log_sol_sus"]
+
+last_date   = df["fecha"].max()
+mask_test   = df["fecha"]==last_date
+mask_train  = ~mask_test
+X_train,y_train = X_total[mask_train],y_total[mask_train]
+X_test ,y_test  = X_total[mask_test ],y_total[mask_test ]
+grupos_train    = df.loc[mask_train,"fecha"]
+
+# -------------------------------------------------------------
+# 2 · AUXILIARES
+adj_r2 = lambda r2,n,p: np.nan if n-p-1<=0 else 1-(1-r2)*(n-1)/(n-p-1)
+rmse   = lambda a,b: np.sqrt(mean_squared_error(a,b))
+def aic_gauss(m,X,y):
+    n,k=len(y),X.shape[1]+1
+    rss=np.sum((y-m.predict(X))**2)
+    return n*np.log(rss/n)+2*k
+
+# -------------------------------------------------------------
+# 3 · SELECCIÓN DE BANDA (AIC + LOGO)
+cv = LeaveOneGroupOut()
+res = []
 for b in bandas:
-    datos_log[f"log_{b}"] = np.log(datos_log[b])
+    lb, Xb_tr = f"log_{b}", X_train[[f"log_{b}"]]
+    pipe = Pipeline([("s",StandardScaler()),("m",LinearRegression())]).fit(Xb_tr,y_train)
+    aic  = aic_gauss(pipe.named_steps["m"],pipe.named_steps["s"].transform(Xb_tr),y_train)
+    rm,r2,ra = [],[],[]
+    for tr,te in cv.split(Xb_tr,y_train,grupos_train):
+        mdl = Pipeline([("s",StandardScaler()),("m",LinearRegression())]).fit(Xb_tr.iloc[tr],y_train.iloc[tr])
+        pred = mdl.predict(Xb_tr.iloc[te])
+        rm.append(rmse(y_train.iloc[te],pred))
+        r2_ = r2_score(y_train.iloc[te],pred)
+        r2.append(r2_); ra.append(adj_r2(r2_,len(te),1))
+    res.append({"Banda":b,"AIC":aic,
+                "RMSE_CV":np.mean(rm),"R2_CV":np.mean(r2),"AdjR2_CV":np.mean(ra)})
 
-log_bandas = [f"log_{b}" for b in bandas]
+tbl = (pd.DataFrame(res).sort_values(["AIC","RMSE_CV"]).round(4).reset_index(drop=True))
+display(style_table(tbl,"Ranking por AIC (TRAIN, log)"))
 
-X_full = datos_log[log_bandas].values
-y_full = datos_log["log_sol_sus"].values
+best_band = tbl.loc[0,"Banda"]
+display(Markdown(f"**Mejor banda:** `{best_band}`"))
 
-# ─────────────────────────────────────────────────────────────────────
-# 4. SPLIT HOLD-OUT 80/20  (shuffle=False para respetar orden)
-# ─────────────────────────────────────────────────────────────────────
-X_train_full, X_test_full, y_train_full, y_test_full = train_test_split(
-    X_full, y_full, test_size=0.20, shuffle=False
-)
+# -------------------------------------------------------------
+# 4 · MODELO FINAL
+lb_best   = f"log_{best_band}"
+pipe_final= Pipeline([("s",StandardScaler()),("m",LinearRegression())]).fit(X_train[[lb_best]],y_train)
+a,b_coef  = pipe_final.named_steps["m"].intercept_,pipe_final.named_steps["m"].coef_[0]
+display(Markdown("**Ecuación log:**"));  display(Markdown(f"`log(sol_sus) = {a:.4f} + {b_coef:.4f}·log({best_band})`"))
+display(Markdown("**Escala real:**"));   display(Markdown(f"`sol_sus = {np.exp(a):.4f} · {best_band}^{b_coef:.4f}`"))
 
-# ─────────────────────────────────────────────────────────────────────
-# 5. FUNCIONES AUXILIARES
-# ─────────────────────────────────────────────────────────────────────
-def aic_gauss(model, X, y):
-    """AIC con supuesto de ruido gaussiano homocedástico."""
-    n = len(y)
-    k = X.shape[1] + 1    # +1 intercepto
-    rss = np.sum((y - model.predict(X)) ** 2)
-    return n * np.log(rss / n) + 2 * k
+# -------------------------------------------------------------
+# 5 · MÉTRICAS TEST (tabla horizontal)
+yhat_log  = pipe_final.predict(X_test[[lb_best]])
+yhat_lin  = np.exp(yhat_log)
+metrics_df = pd.DataFrame({
+    "Métrica":["RMSE","R²","R² ajustado"],
+    "Log":[rmse(y_test,yhat_log), r2_score(y_test,yhat_log), adj_r2(r2_score(y_test,yhat_log),len(y_test),1)],
+    "Real (mg/L)":[rmse(np.exp(y_test),yhat_lin), r2_score(np.exp(y_test),yhat_lin),
+                   adj_r2(r2_score(np.exp(y_test),yhat_lin),len(y_test),1)]
+})
+metrics_df["Log"] = metrics_df["Log"].apply(lambda x:f"{x:.3f}")
+metrics_df["Real (mg/L)"]=metrics_df["Real (mg/L)"].apply(lambda x:f"{x:.3f}" if abs(x)<10 else f"{x:.2f}")
+display(style_table(metrics_df,"Desempeño en TEST"))
 
-def r2_adj(r2, n, p):
-    return 1 - (1 - r2) * (n - 1) / (n - p - 1)
+# -------------------------------------------------------------
+# 6 · BOOTSTRAP (tabla horizontal)
+np.random.seed(123); n_boot=500; fechas=grupos_train.unique()
+ib,cb,rm_l,r2_l,ra_l,rm_r,r2_r,ra_r=[],[],[],[],[],[],[],[]
+for _ in range(n_boot):
+    idx = grupos_train.isin(np.random.choice(fechas,len(fechas),replace=True))
+    Xb,yb = X_train[[lb_best]].loc[idx],y_train.loc[idx]
+    mdl = Pipeline([("s",StandardScaler()),("m",LinearRegression())]).fit(Xb,yb)
+    ib.append(mdl.named_steps["m"].intercept_)
+    cb.append(mdl.named_steps["m"].coef_[0])
+    pr_log = mdl.predict(X_train[[lb_best]])
+    rm_l.append(rmse(y_train,pr_log)); r2_l_ = r2_score(y_train,pr_log); r2_l.append(r2_l_)
+    ra_l.append(adj_r2(r2_l_,len(y_train),1))
+    pr_lin = np.exp(pr_log)
+    rm_r.append(rmse(np.exp(y_train),pr_lin)); r2_r_ = r2_score(np.exp(y_train),pr_lin); r2_r.append(r2_r_)
+    ra_r.append(adj_r2(r2_r_,len(y_train),1))
 
-def cv_metrics(X_mat, y_vec, cv):
-    """Devuelve medias y sd del RMSE y medias de R² y R²aj."""
-    model = LinearRegression()
-    rmse_folds, r2_folds, r2a_folds = [], [], []
+pct = lambda arr: np.percentile(arr,[2.5,97.5])
+ci = { "inter":pct(ib), "coef":pct(cb),
+       "rm_l":pct(rm_l),"r2_l":pct(r2_l),"ra_l":pct(ra_l),
+       "rm_r":pct(rm_r),"r2_r":pct(r2_r),"ra_r":pct(ra_r)}
 
-    for tr_idx, val_idx in cv.split(X_mat):
-        X_tr, X_val = X_mat[tr_idx], X_mat[val_idx]
-        y_tr, y_val = y_vec[tr_idx], y_vec[val_idx]
+bs_df = pd.DataFrame({
+    "Parámetro / Métrica":[
+        "Intercepto",f"Coef {best_band}",
+        "RMSE (log)","R² (log)","R² ajustado (log)",
+        "RMSE (mg/L)","R² (mg/L)","R² ajustado (mg/L)"
+    ],
+    "Promedio":[np.mean(ib),np.mean(cb),
+                np.mean(rm_l),np.mean(r2_l),np.mean(ra_l),
+                np.mean(rm_r),np.mean(r2_r),np.mean(ra_r)],
+    "IC 95% inf.":[ci["inter"][0],ci["coef"][0],
+                   ci["rm_l"][0],ci["r2_l"][0],ci["ra_l"][0],
+                   ci["rm_r"][0],ci["r2_r"][0],ci["ra_r"][0]],
+    "IC 95% sup.":[ci["inter"][1],ci["coef"][1],
+                   ci["rm_l"][1],ci["r2_l"][1],ci["ra_l"][1],
+                   ci["rm_r"][1],ci["r2_r"][1],ci["ra_r"][1]]
+})
+for col in bs_df.columns[1:]:
+    bs_df[col] = bs_df[col].apply(lambda x:f"{x:.4f}" if abs(float(x))<10 else f"{x:.2f}")
+display(style_table(bs_df,"Bootstrap (500 réplicas) · IC 95%"))
 
-        model.fit(X_tr, y_tr)
-        y_pred = model.predict(X_val)
+# -------------------------------------------------------------
+# 7 · GRÁFICO Predicho vs Observado  (Train + Test)
+#     Izquierda → escala log   ·   Derecha → escala original
+plt.rcParams.update({"axes.titlesize":10, "axes.labelsize":8,
+                     "xtick.labelsize":7, "ytick.labelsize":7})
 
-        rmse = np.sqrt(mean_squared_error(y_val, y_pred))
-        r2   = r2_score(y_val, y_pred)
-        r2a  = r2_adj(r2, len(y_val), X_mat.shape[1])
+TRAIN_CLR = "#9D50A6"   # violeta
+TEST_CLR  = "#FFA24B"   # naranja
+ID_CLR    = "#17A77E"   # línea identidad
 
-        rmse_folds.append(rmse)
-        r2_folds.append(r2)
-        r2a_folds.append(r2a)
+# --- predicciones ---
+y_train_log_pred = pipe_final.predict(X_train[[lb_best]])
+y_test_log_pred  = pipe_final.predict(X_test [[lb_best]])
+y_train_orig, y_train_pred = np.exp(y_train), np.exp(y_train_log_pred)
+y_test_orig , y_test_pred  = np.exp(y_test ), np.exp(y_test_log_pred)
 
-    return {
-        "rmse_mean": np.mean(rmse_folds),
-        "rmse_std":  np.std(rmse_folds, ddof=1),
-        "r2_mean":   np.mean(r2_folds),
-        "r2a_mean":  np.mean(r2a_folds)
-    }
+fig, ax = plt.subplots(1, 2, figsize=(9, 4), sharex=False, sharey=False)
 
-# Configuración de la validación cruzada interior
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
+#  Escala log
+ax[0].scatter(y_train, y_train_log_pred, alpha=0.6,
+              color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_test , y_test_log_pred , alpha=0.6,
+              color=TEST_CLR , marker="s", edgecolor="k", label="Test  (■)")
 
-# ─────────────────────────────────────────────────────────────────────
-# 6. EVALUACIÓN UNIVARIABLE  (CV + AIC)
-# ─────────────────────────────────────────────────────────────────────
-resultados = []
+lims = [min(y_train.min(), y_test.min()),
+        max(y_train.max(), y_test.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set_xlabel("log(sol_sus) observado")
+ax[0].set_ylabel("log(sol_sus) predicho")
+ax[0].set_title("Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
 
-for idx_band, b in enumerate(bandas):
-    X_train_band = X_train_full[:, idx_band].reshape(-1, 1)
+eq_log_txt = f"log(sol_sus) = {a:.3f} + {b_coef:.3f}·log({best_band})"
+ax[0].text(0.04, 0.96, eq_log_txt, transform=ax[0].transAxes,
+           fontsize=7, va="top",
+           bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="gray", lw=0.4))
 
-    # 6.1  CV
-    stats_cv = cv_metrics(X_train_band, y_train_full, kf)
+#  Escala original
+ax[1].scatter(y_train_orig, y_train_pred, alpha=0.6,
+              color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_test_orig , y_test_pred , alpha=0.6,
+              color=TEST_CLR , marker="s", edgecolor="k", label="Test  (■)")
 
-    # 6.2  AIC en todo el 80 %
-    modelo_tmp = LinearRegression().fit(X_train_band, y_train_full)
-    aic_val    = aic_gauss(modelo_tmp, X_train_band, y_train_full)
+lims_o = [min(y_train_orig.min(), y_test_orig.min(),
+              y_train_pred.min(), y_test_pred.min()),
+          max(y_train_orig.max(), y_test_orig.max(),
+              y_train_pred.max(), y_test_pred.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[1].set_xlabel("sol_sus observado (mg/L)")
+ax[1].set_ylabel("sol_sus predicho (mg/L)")
+ax[1].set_title("Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
 
-    resultados.append({
-        "Banda":     b,
-        "AIC_train": aic_val,
-        "RMSE_CV":   stats_cv["rmse_mean"],
-        "CV_std":    stats_cv["rmse_std"],
-        "R2_CV":     stats_cv["r2_mean"],
-        "R2aj_CV":   stats_cv["r2a_mean"]
-    })
+eq_orig_txt = f"sol_sus = {np.exp(a):.4f} × {best_band}^{b_coef:.4f}"
+ax[1].text(0.04, 0.96, eq_orig_txt, transform=ax[1].transAxes,
+           fontsize=7, va="top",
+           bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="gray", lw=0.4))
 
-df_res = (
-    pd.DataFrame(resultados)
-      #   PRIMER CRITERIO: AIC  ▸  SEGUNDO: RMSE_CV
-      .sort_values(["AIC_train", "RMSE_CV"])
-      .reset_index(drop=True)
-      .round(4)
-)
+fig.suptitle(f"Predicho vs Observado · Banda {best_band}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
 
-print("\nComparación banda-a-banda (ordenada por AIC, luego RMSE_CV):\n")
-print(df_res.to_string(index=False))
-
-# ─────────────────────────────────────────────────────────────────────
-# 7. BANDA GANADORA  →  EVALUACIÓN HOLD-OUT
-# ─────────────────────────────────────────────────────────────────────
-best_band = df_res.loc[0, "Banda"]
-idx_best  = bandas.index(best_band)
-
-X_train_best = X_train_full[:, idx_best].reshape(-1, 1)
-X_test_best  = X_test_full[:,  idx_best].reshape(-1, 1)
-
-best_model = LinearRegression().fit(X_train_best, y_train_full)
-y_pred_test = best_model.predict(X_test_best)
-
-rmse_test = np.sqrt(mean_squared_error(y_test_full, y_pred_test))
-r2_test   = r2_score(y_test_full, y_pred_test)
-
-print(f"\n────────  HOLD-OUT (20 %)  ─────────")
-print(f"Banda ganadora: {best_band}")
-print(f"RMSE_test  = {rmse_test:.3f}")
-print(f"R²_test    = {r2_test:.3f}")
+# (opcional) restaurar tamaños por si sigues graficando después
+plt.rcParams.update({"axes.titlesize":11, "axes.labelsize":9,
+                     "xtick.labelsize":8, "ytick.labelsize":8})
 
 ```
 
+::: {.callout-note title="Conclusión del modelo con validación cruzada"}
 
-::: {.callout-note title="Conclusión sobre la selección de bandas con AIC"}
+Selecciono la banda **B07** como la mejor candidata para estimar los sólidos suspendidos. Esta elección se basa en el valor más bajo del AIC y el menor error promedio en validación cruzada (`RMSE_CV`). El modelo resultante indica que, a mayor reflectancia en la banda B07, tiende a haber mayor concentración estimada de sólidos suspendidos.
 
-Al incorporar validación cruzada para evaluar la selección univariable por banda en escala logarítmica, la banda B06 se mantiene como la mejor candidata, con el AIC más bajo y el RMSE promedio más pequeño en CV (aprox. 0.31).
+Sin embargo, al evaluar el modelo con los datos más recientes (campaña de prueba), el desempeño cae considerablemente. El `R²` es negativo, lo que significa que el modelo predice peor que una estimación promedio constante. En otras palabras, **el modelo no generaliza bien a nuevos datos**.
 
-Sin embargo, los valores de R² ajustado en CV son negativos para todas las bandas, lo que indica que el modelo lineal simple no logra explicar bien la variabilidad fuera de la muestra, sugiriendo un ajuste pobre o posible falta de linealidad real en los datos.
+Para tener una idea más completa de su estabilidad, aplico la técnica de **bootstrap** con 500 repeticiones. Esto muestra que si bien el coeficiente de la banda B07 es consistentemente positivo (lo que confirma una relación), el rendimiento general del modelo es bajo y muy variable.
 
-La evaluación final en el conjunto hold-out (20 %) confirma esta baja capacidad predictiva, con un RMSE_test de 0.491 y un R²_test negativo (-0.291), lo que indica que el modelo predice peor que un modelo que simplemente promedie los datos.
-
-En resumen, aunque B06 es la banda más prometedora según los criterios AIC y RMSE en entrenamiento y validación interna, la baja performance en datos nuevos apunta a la necesidad de modelos más complejos, combinaciones multivariables o transformaciones adicionales para mejorar la predicción.
+Concluyo que, aunque B07 es la mejor banda individual, **no alcanza para predecir sólidos suspendidos con precisión**. Para mejorar el modelo, es necesario combinar varias bandas, usar índices espectrales o aplicar modelos más complejos.
 
 :::
 
@@ -1086,234 +1254,2024 @@ En resumen, aunque B06 es la banda más prometedora según los criterios AIC y R
 
 ### Selección de bandas con Forward Selection basado en AIC
 
-En esta etapa realizo una selección de variables (bandas espectrales) combinadas utilizando un método de **Forward Selection** guiado por el criterio de información de Akaike (AIC). Este método comienza con un modelo vacío e incorpora progresivamente la banda que produce la mayor mejora (reducción) en el AIC, deteniéndose cuando no se consigue una mejora significativa.
+En esta sección realizo la selección de un conjunto de bandas espectrales para predecir la concentración de **sólidos suspendidos (sol_sus)** mediante un modelo de regresión lineal múltiple en escala logarítmica. Utilizo el método de **Forward Selection** guiado por el **criterio de información de Akaike (AIC)**, que permite incorporar progresivamente aquellas bandas cuya inclusión mejora significativamente el ajuste del modelo sin incrementar de forma innecesaria su complejidad.
 
-La selección se realiza sobre datos transformados en escala logarítmica para estabilizar varianzas y linealizar relaciones. Además, se valida el desempeño del modelo en cada paso mediante validación cruzada (5 folds), evaluando métricas como RMSE y R² en escala original para tener una idea más realista del ajuste.
 
-Finalmente, se evalúa el modelo seleccionado en un conjunto independiente de test (20 % de los datos) para estimar su capacidad predictiva fuera de muestra. También se presenta la ecuación final en escala log-log y en escala original para facilitar la interpretación.
+En esta sección selecciono un conjunto de bandas espectrales para predecir los **sólidos suspendidos (sol_sus)** mediante regresión lineal múltiple en escala logarítmica. Utilizo el método de **Forward Selection**, que comienza con un modelo vacío e incorpora progresivamente las bandas que más reducen el **AIC**, siempre que la mejora sea significativa (ΔAIC ≥ 1).
 
+Transformo todas las variables a escala logarítmica para linealizar relaciones y reducir la variabilidad. Reservo la última fecha como conjunto de prueba, y entreno el modelo con el resto de los datos. Durante la selección, evalúo el desempeño con validación cruzada agrupada (`GroupKFold`), que respeta las campañas de muestreo y permite estimar la capacidad del modelo para generalizar a nuevas fechas.
+
+Finalmente, ajusto el modelo con las bandas seleccionadas, calculo métricas en train y test, y realizo un análisis bootstrap para obtener intervalos de confianza de los coeficientes. Esto me permite construir un modelo interpretable, robusto y ajustado a las condiciones reales del monitoreo ambiental.
 
 ```{python}
 #|code-fold: true
-# ─────────────────────────────────────────────────────────────────────
-# 0 · LIBRERÍAS
-# ─────────────────────────────────────────────────────────────────────
-import pandas as pd
 import numpy as np
-import math
-import matplotlib.pyplot as plt
+import pandas as pd
+from pathlib import Path
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
 
-# ─────────────────────────────────────────────────────────────────────
-# 1 · CARGAR Y PRE-PROCESAR
-# ─────────────────────────────────────────────────────────────────────
-df     = pd.read_csv("datos/datos_sol_sus_acolite.csv")
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS      = Path("datos/datos_sol_sus_acolite.csv")   
+N_BOOT     = 2000
+DELTA_AIC  = 1.0
+RNG_SEED   = 42
+
+# -------------------------------------------------------------
+# 2 · ESTILO TABLAS (robusto a versiones pandas)
+def style_table(df, caption):
+    sty = df.style.format(precision=3)
+    if hasattr(sty, "hide"):
+        sty = sty.hide(axis="index")
+    elif hasattr(sty, "hide_index"):
+        sty = sty.hide_index()
+    # caption + estilos de alineación
+    sty = (sty.set_caption(caption)
+              .set_table_styles([
+                  {"selector":"caption","props":[("caption-side","top"),
+                                                ("font-weight","bold"),
+                                                ("margin-bottom","0.5em"),
+                                                ("text-align","left")]},
+                  {"selector":"th","props":[("text-align","center")]},
+                  {"selector":"td","props":[("text-align","right"),
+                                            ("padding","0.25em 0.5em")]}
+              ], overwrite=False))
+    return sty
+
+# -------------------------------------------------------------
+# 3 · FUNCIONES AUXILIARES
+rmse = lambda a,b: np.sqrt(mean_squared_error(a,b))
+aic_g = lambda rss,n,k: n*np.log(rss/n)+2*k
+def fit_metrics(Xm, ym):
+    m = LinearRegression().fit(Xm, ym)
+    pred = m.predict(Xm)
+    n,p = Xm.shape
+    rss = np.sum((ym - pred)**2)
+    return {"AIC":aic_g(rss,n,p+1),
+            "RMSE":rmse(ym,pred),
+            "R²":r2_score(ym,pred),
+            "R²aj":1-(1-r2_score(ym,pred))*(n-1)/(n-p-1),
+            "mod":m}
+
+# -------------------------------------------------------------
+# 4 · CARGA Y PREPARACIÓN
+df = (pd.read_csv(DATOS)
+        .sort_values("fecha")
+        .reset_index(drop=True))
+df["fecha"] = pd.to_datetime(df["fecha"])
+
 bandas = [c for c in df.columns if c.startswith("B")]
-
-mask   = (df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)
+mask   = (df["sol_sus"]>0) & (df[bandas]>0).all(axis=1)
 df     = df.loc[mask].copy()
 
 df["log_sol_sus"] = np.log(df["sol_sus"])
-for b in bandas:
-    df[f"log_{b}"] = np.log(df[b])
+for b in bandas: df[f"log_{b}"] = np.log(df[b])
 
-log_cols = [f"log_{b}" for b in bandas]
-X_full   = df[log_cols].values
-y_full   = df["log_sol_sus"].values          # todavía en log
+X = df[[f"log_{b}" for b in bandas]]; y = df["log_sol_sus"]
 
-# ─────────────────────────────────────────────────────────────────────
-# 2 · HOLD-OUT 80 / 20  (orden intacto → shuffle=False)
-# ─────────────────────────────────────────────────────────────────────
-X_tr, X_te, y_tr, y_te = train_test_split(
-    X_full, y_full, test_size=0.20, shuffle=False
-)
+last_date = df["fecha"].max()
+m_test    = df["fecha"]==last_date
+m_train   = ~m_test
 
-# ─────────────────────────────────────────────────────────────────────
-# 3 · FUNCIONES AUXILIARES
-# ─────────────────────────────────────────────────────────────────────
-def aic_gauss(model, X, y):
-    n = len(y)
-    k = X.shape[1] + 1
-    rss = np.sum((y - model.predict(X))**2)
-    return n * np.log(rss / n) + 2 * k
+X_tr,y_tr = X[m_train],y[m_train]
+X_te,y_te = X[m_test ],y[m_test ]
+groups_tr = df.loc[m_train,"fecha"]
 
-def r2_adj(r2, n, p):
-    return 1 - (1 - r2) * (n - 1) / (n - p - 1)
+print(f"TRAIN campañas : {groups_tr.nunique()}")
+print(f"TEST  campaña  : {last_date.date()} ({m_test.sum()} muestras)")
 
-def cv_metrics(Xm, ym, cv):
-    """
-    Devuelve métricas en ESCALA ORIGINAL para 5-fold CV:
-      · rmse_mean, rmse_std, r2_mean, r2a_mean
-    """
-    model = LinearRegression()
-    rmse_f, r2_f = [], []
+# -------------------------------------------------------------
+# 5 · FORWARD SELECTION con tabla de candidatos
+remaining, selected = list(X_tr.columns), []
+rss_null  = np.sum((y_tr - y_tr.mean())**2)
+best_aic  = aic_g(rss_null,len(y_tr),1)
+hist=[]; paso=0
 
-    for tr_idx, vl_idx in cv.split(Xm):
-        model.fit(Xm[tr_idx], ym[tr_idx])          # log-modelo
-        pred_log = model.predict(Xm[vl_idx])
+while remaining:
+    cand=[]
+    for b in remaining:
+        mets = fit_metrics(X_tr[selected+[b]].values, y_tr.values)
+        cand.append((mets["AIC"], b, mets))
+    cand.sort()
 
-        # → escala original
-        y_val_orig   = np.exp(ym[vl_idx])
-        pred_orig    = np.exp(pred_log)
+    df_cand = pd.DataFrame({
+        "Banda":[b.replace("log_","") for _,b,_ in cand],
+        "AIC":[a for a,_,_ in cand]
+    })
+    df_cand["ΔAIC"] = best_aic - df_cand["AIC"]
+    display(Markdown(f"**Paso {paso+1} - candidatos:**"))
+    display(style_table(df_cand,""))
 
-        rmse_f.append(np.sqrt(mean_squared_error(y_val_orig, pred_orig)))
-        r2_f  .append(r2_score(y_val_orig, pred_orig))
-
-    r2_mean = np.mean(r2_f)
-    r2a_mean = r2_adj(r2_mean, len(ym), Xm.shape[1])
-    return {
-        "rmse_mean": np.mean(rmse_f),
-        "rmse_std":  np.std(rmse_f, ddof=1),
-        "r2_mean":   r2_mean,
-        "r2a_mean":  r2a_mean
-    }
-
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
-
-# ─────────────────────────────────────────────────────────────────────
-# 4 · FORWARD-SELECTION GUIADO POR AIC
-# ─────────────────────────────────────────────────────────────────────
-remain, select, best_aic, hist = list(range(len(bandas))), [], np.inf, []
-
-while remain:
-    best_cand = None
-    for idx in remain:
-        cols = select + [idx]
-        mdl  = LinearRegression().fit(X_tr[:, cols], y_tr)
-        aic  = aic_gauss(mdl, X_tr[:, cols], y_tr)
-        if best_cand is None or aic < best_cand[0]:
-            best_cand = (aic, idx)
-
-    # mejora ≥ 2 unidades
-    if best_cand[0] + 2 < best_aic:
-        best_aic = best_cand[0]
-        select.append(best_cand[1])
-        remain.remove(best_cand[1])
-
-        stats = cv_metrics(X_tr[:, select], y_tr, kf)
-        hist.append({
-            "Paso": len(select),
-            "Añadido": bandas[best_cand[1]],
-            "AIC": round(best_aic, 3),
-            "RMSE_CV": round(stats["rmse_mean"], 3),
-            "CV_std":  round(stats["rmse_std"], 3),
-            "R2_CV":   round(stats["r2_mean"], 3),
-            "R2aj_CV": round(stats["r2a_mean"], 3)
-        })
+    new_aic,best_band,best_met = cand[0]
+    if best_aic - new_aic >= DELTA_AIC:
+        selected.append(best_band); remaining.remove(best_band)
+        best_aic=new_aic; paso+=1
+        hist.append({"Paso":paso,
+                     "Bandas":", ".join(c.replace("log_","") for c in selected),
+                     "AIC":best_aic,
+                     "RMSE":best_met["RMSE"],
+                     "R²":best_met["R²"],
+                     "R²aj":best_met["R²aj"]})
     else:
         break
 
-hist_df = pd.DataFrame(hist)
-print("\nHistorial forward-AIC:")
-print(hist_df)
+if not selected:
+    selected=[cand[0][1]]; best_aic=cand[0][0]; best_met=cand[0][2]
+    hist=[{"Paso":1,"Bandas":selected[0].replace("log_",""),
+           "AIC":best_aic,"RMSE":best_met["RMSE"],
+           "R²":best_met["R²"],"R²aj":best_met["R²aj"]}]
 
-sel_b = [bandas[i] for i in select]
-print(f"\nBandas finales seleccionadas: {sel_b}")
+hist_df=pd.DataFrame(hist)[["Paso","Bandas","AIC","RMSE","R²","R²aj"]]
+display(style_table(hist_df,"Historial forward‑AIC"))
 
-# ─────────────────────────────────────────────────────────────────────
-# 5 · AJUSTE FINAL Y MÉTRICAS TEST (ORIGINAL)
-# ─────────────────────────────────────────────────────────────────────
-Xtr_sel = X_tr[:, select]
-Xte_sel = X_te[:, select]
+sel_log=selected; sel=[c.replace("log_","") for c in sel_log]
+display(Markdown(f"**Bandas finales:** {', '.join(sel)}"))
 
-final_model = LinearRegression().fit(Xtr_sel, y_tr)
+# -------------------------------------------------------------
+# 6 · GroupKFold CV
+gkf=GroupKFold(n_splits=min(5,groups_tr.nunique()))
+rmse_cv=[rmse(y_tr.iloc[te],
+              LinearRegression().fit(X_tr.iloc[tr][sel_log],y_tr.iloc[tr])
+              .predict(X_tr.iloc[te][sel_log]))
+         for tr,te in gkf.split(X_tr[sel_log],y_tr,groups_tr)]
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rmse_cv):.3f} ± {np.std(rmse_cv):.3f}"))
 
-# → escala original para test
-pred_test_orig = np.exp(final_model.predict(Xte_sel))
-y_test_orig    = np.exp(y_te)
+# -------------------------------------------------------------
+# 7 · MODELO FINAL + MÉTRICAS
+mod = LinearRegression().fit(X_tr[sel_log], y_tr)
+pred_tr_log = mod.predict(X_tr[sel_log])
+pred_te_log = mod.predict(X_te[sel_log])
 
-rmse_test = np.sqrt(mean_squared_error(y_test_orig, pred_test_orig))
-mae_test  = mean_absolute_error(y_test_orig, pred_test_orig)
-r2_test   = r2_score(y_test_orig, pred_test_orig)
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
 
-# ─────────────────────────────────────────────────────────────────────
-# 6 · ECUACIÓN FINAL (formato fracción cuando hay exponentes negativos)
-# ─────────────────────────────────────────────────────────────────────
-interc  = final_model.intercept_
-coefs   = final_model.coef_
+metrics_df = pd.DataFrame({
+    "Métrica": ["RMSE", "R²"],
+    "Train log": [rmse(y_tr, pred_tr_log), r2_score(y_tr, pred_tr_log)],
+    "Test log": [rmse(y_te, pred_te_log), r2_score(y_te, pred_te_log)],
+    "Train orig": [rmse(y_tr_lin, pred_tr_lin), r2_score(y_tr_lin, pred_tr_lin)],
+    "Test orig": [rmse(y_te_lin, pred_te_lin), r2_score(y_te_lin, pred_te_lin)]
+})
+for col in metrics_df.columns[1:]:
+    metrics_df[col] = metrics_df[col].apply(lambda x: f"{x:.3f}")
 
-pos_terms = [f"{b}^{c:.4f}"      for b, c in zip(sel_b, coefs) if c >= 0]
-neg_terms = [f"{b}^{-c:.4f}"     for b, c in zip(sel_b, coefs) if c < 0]
+display(style_table(metrics_df, "Desempeño en Train y Test"))
 
-k_factor  = math.exp(interc)
-numerator = " * ".join(pos_terms) if pos_terms else "1"
-denominator = " * ".join(neg_terms)
+# -------------------------------------------------------------
+# 8 · BOOTSTRAP coeficientes
+rng = np.random.default_rng(RNG_SEED)
+dates = groups_tr.unique()
+coef_bs = []
 
-print("\nEcuación en escala log-log:")
-log_eq = [f"{interc:+.4f}"] + [
-    f"{coefs[i]:+0.4f}·log({sel_b[i]})" for i in range(len(sel_b))
-]
-print("log(sol_sus) = " + " ".join(log_eq))
+for _ in range(N_BOOT):
+    idx = groups_tr.isin(rng.choice(dates, len(dates), replace=True))
+    coef_bs.append(LinearRegression().fit(X_tr.loc[idx, sel_log], y_tr.loc[idx]).coef_)
 
-print("\nEscala original:")
-if denominator:
-    print(f"sol_sus_orig = {k_factor:.2f} · ({numerator}) / ({denominator})")
-else:
-    print(f"sol_sus_orig = {k_factor:.2f} · {numerator}")
+coef_bs = np.array(coef_bs)
+mean = coef_bs.mean(axis=0)
+lo, hi = np.percentile(coef_bs, [2.5, 97.5], axis=0)
 
-# ─────────────────────────────────────────────────────────────────────
-# 7 · TABLA FINAL DE MÉTRICAS
-# ─────────────────────────────────────────────────────────────────────
-final_row = {
-    "Bandas": "+".join(sel_b),
-    "AIC_train": round(best_aic, 3),
-    "RMSE_CV":   round(hist[-1]["RMSE_CV"], 3),
-    "CV_std":    round(hist[-1]["CV_std"], 3),
-    "R²_CV":     round(hist[-1]["R2_CV"], 3),
-    "R²aj_CV":   round(hist[-1]["R2aj_CV"], 3),
-    "RMSE_test": round(rmse_test, 3),
-    "MAE_test":  round(mae_test, 3),
-    "R²_test":   round(r2_test, 3)
-}
+bs_df = pd.DataFrame({"Banda": sel, "Media β": mean, "IC inf": lo, "IC sup": hi})
+display(style_table(bs_df, "Bootstrap (coeficientes, 95 % CI)"))
 
-print("\n──────── TABLA FINAL ────────")
-print(pd.DataFrame([final_row]).to_string(index=False))
+# -------------------------------------------------------------
+# 9 · ECUACIONES Y BANDAS SELECCIONADAS
+alpha = np.exp(mod.intercept_)
+expr_log = " + ".join(f"{c:.4f}·log({b})" for c, b in zip(mod.coef_, sel))
+expr_orig = " · ".join(f"{b}^{c:.4f}" for c, b in zip(mod.coef_, sel))
 
-# ─────────────────────────────────────────────────────────────────────
-# 8 · GRÁFICO REAL vs PREDICHO (train + test)
-# ─────────────────────────────────────────────────────────────────────
-# Train → original
-pred_train_orig = np.exp(final_model.predict(Xtr_sel))
-y_train_orig    = np.exp(y_tr)
+display(Markdown("**Bandas seleccionadas:**"))
+display(Markdown(f"`{', '.join(sel)}`"))
 
-plt.figure(figsize=(6, 6))
-plt.scatter(y_train_orig, pred_train_orig,
-            alpha=0.7, label="Train")
-plt.scatter(y_test_orig, pred_test_orig,
-            alpha=0.7, marker='s', edgecolors='k', label="Test")
+display(Markdown("**Ecuación en escala logarítmica:**"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
 
-# línea y = x
-mn, mx = min(y_train_orig.min(), y_test_orig.min()), \
-         max(y_train_orig.max(), y_test_orig.max())
-plt.plot([mn, mx], [mn, mx], "--", color="gray")
+display(Markdown("**Ecuación en escala original:**"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
 
-plt.xlabel("Sólidos suspendidos observados")
-plt.ylabel("Sólidos suspendidos predichos")
-plt.title("Ajuste modelo (escala original)")
+# -------------------------------------------------------------
+# 10 · GRÁFICO Predicho vs Observado (Train+Test)
+plt.rcParams.update({"axes.titlesize":10,"axes.labelsize":8,
+                     "xtick.labelsize":7,"ytick.labelsize":7})
 
-# ecuación en caja
-eq_line = rf"$\hat{{y}} = {k_factor:.1f}"
-for b, c in zip(sel_b, coefs):
-    eq_line += rf"\times {b}^{{{c:.2f}}}"
-eq_line += "$"
-plt.text(0.05, 0.95, eq_line,
-         transform=plt.gca().transAxes,
-         fontsize=8, va="top",
-         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", lw=0.5))
+TRAIN_CLR = "#9D50A6"
+TEST_CLR = "#FFA24B"
+ID_CLR = "#17A77E"
 
-plt.legend()
-plt.tight_layout()
+fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+# Escala log
+ax[0].scatter(y_tr, pred_tr_log, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_te, pred_te_log, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# Escala original
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
 plt.show()
 
+# restaurar estilos si continuás graficando
+plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
+                     "xtick.labelsize":8,"ytick.labelsize":8})
 ```
 
 
 ::: {.callout-note title="Conclusión del modelo seleccionado"}
 
-El algoritmo de Forward Selection identificó a las bandas B06 y B02 como las más relevantes para predecir los sólidos suspendidos en escala log-log. El modelo final presenta un buen desempeño, con un RMSE_test de 16.69 y un R²_test de 0.86 en escala original, lo que indica una capacidad predictiva adecuada sobre datos no vistos. Además, la ecuación obtenida permite expresar la variable objetivo en función de las bandas seleccionadas de forma clara y directa.
+Selecciono las bandas **B07** y **B02** como las mejores para estimar los sólidos suspendidos, basándome en la reducción significativa del `AIC` y la mejora en el error promedio de validación cruzada (`RMSE_CV`). El modelo indica que la reflectancia en B07 tiene un efecto positivo en la concentración estimada, mientras que B02 aporta un efecto negativo, lo que puede relacionarse con propiedades ópticas del agua y sedimentos.
 
-Aunque el ajuste es satisfactorio, sería conveniente en futuros análisis explorar modelos no lineales o técnicas multivariadas más complejas, como regresión regularizada o árboles de decisión, que podrían captar relaciones más sutiles entre variables. 
+Al evaluar el modelo con datos nuevos (campaña de prueba), el desempeño es razonablemente bueno, con un `R²` positivo que refleja una capacidad aceptable de generalización. El análisis bootstrap confirma la estabilidad de los coeficientes y las métricas, entregando confianza en la robustez del modelo.
+
+En resumen, combinar estas dos bandas mejora sustancialmente la predicción en comparación con usar una sola banda, pero para lograr mayor precisión probablemente sea necesario explorar índices espectrales o modelos más avanzados.
 
 :::
+
+
+
+### Selección de variables mediante Forward Selection con AIC usando razones simples de bandas
+
+En esta etapa exploro combinaciones de variables formadas por razones simples entre bandas espectrales, todas en escala logarítmica, para mejorar la predicción de los sólidos suspendidos (**sol_sus**). Aplico un método de **Forward Selection** guiado por el criterio de información de Akaike (AIC), que me permite construir un modelo parsimonioso incorporando solo aquellas razones que aportan mejoras significativas en el ajuste.
+
+El análisis se realiza sobre el conjunto de entrenamiento definido previamente, manteniendo la partición temporal para test y respetando la estructura grupal en la validación cruzada. Además, implemento un análisis bootstrap para estimar la incertidumbre en los coeficientes y evaluar la estabilidad del modelo.
+
+Con este procedimiento busco identificar relaciones espectrales más complejas que mejor expliquen la variabilidad de sólidos suspendidos, maximizando la capacidad predictiva sin sobreajustar, para un monitoreo ambiental más preciso y confiable.
+
+```{python}
+#|code-fold: true
+# 0 · LIBRERÍAS
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
+
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS     = Path("datos/datos_sol_sus_acolite.csv")     # ← ajustá si hace falta
+DELTA_AIC = 2                                            # ΔAIC mínimo
+N_BOOT    = 2000
+RNG_SEED  = 42
+
+# -------------------------------------------------------------
+# 2 · FUNCIONES AUXILIARES
+def aic_gauss(rss, n, k):           # k = nº coef + intercepto
+    return n * np.log(rss / n) + 2 * k
+
+def fit_metrics(X, y):
+    """Ajusta LR y devuelve métricas + modelo."""
+    m    = LinearRegression().fit(X, y)
+    pred = m.predict(X)
+    rss  = np.sum((y - pred) ** 2)
+    n, p = X.shape
+    return {
+        "AIC" : aic_gauss(rss, n, p + 1),
+        "RMSE": np.sqrt(mean_squared_error(y, pred)),
+        "R²"  : r2_score(y, pred),
+        "R²aj": 1 - (1 - r2_score(y, pred)) * (n - 1) / (n - p - 1),
+        "mod" : m
+    }
+
+def rmse(a, b): return np.sqrt(mean_squared_error(a, b))
+
+# -------------------------------------------------------------
+# 3 · CARGA Y PREPARACIÓN DE DATOS
+df = pd.read_csv(DATOS)
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+bandas = [c for c in df.columns if c.startswith("B")]
+mask   = (df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)
+df     = df.loc[mask].copy()
+
+# variable respuesta en log
+df["log_sol_sus"] = np.log(df["sol_sus"])
+
+# -------------------------------------------------------------
+# 3.1 · GENERAR RAZONES SIMPLES DE BANDAS EN LOGARITMO
+ratio_cols = []
+for i, b1 in enumerate(bandas):
+    for b2 in bandas[i+1:]:
+        col = f"log({b1}/{b2})"
+        df[col] = np.log(df[b1]) - np.log(df[b2])
+        ratio_cols.append(col)
+
+X = df[ratio_cols]                # predictores = razones simples en log
+y = df["log_sol_sus"]
+
+# -------------------------------------------------------------
+# 3.2 · PARTICIÓN TEMPORAL
+last_date = df["fecha"].max()
+m_test    = df["fecha"] == last_date
+m_train   = ~m_test
+
+X_tr, y_tr = X.loc[m_train], y.loc[m_train]
+X_te, y_te = X.loc[m_test] , y.loc[m_test]
+groups_tr  = df.loc[m_train, "fecha"]
+
+print(f"TRAIN campañas : {groups_tr.nunique()}")
+print(f"TEST  campaña  : {last_date.date()} ({m_test.sum()} muestras)")
+
+# -------------------------------------------------------------
+# 4 · FORWARD SELECTION (razones simples logarítmicas) con AIC + Δ
+remaining = ratio_cols.copy()
+selected  = []
+
+# modelo nulo
+rss_null  = np.sum((y_tr - y_tr.mean())**2)
+best_aic  = aic_gauss(rss_null, len(y_tr), k=1)
+
+hist = []
+paso = 0
+while remaining:
+    candidatos = []
+    for col in remaining:
+        cols = selected + [col]
+        m    = fit_metrics(X_tr[cols].values, y_tr.values)
+        candidatos.append((m["AIC"], col, m))
+    candidatos.sort()
+
+    new_aic, best_col, best_met = candidatos[0]
+    if best_aic - new_aic >= DELTA_AIC:     # mejora ≥ ΔAIC
+        selected.append(best_col)
+        remaining.remove(best_col)
+        best_aic = new_aic
+        paso += 1
+        hist.append({
+            "Paso"  : paso,
+            "Bandas": ", ".join(selected),
+            "AIC"   : best_aic,
+            "RMSE"  : best_met["RMSE"],
+            "R²"    : best_met["R²"],
+            "R²aj"  : best_met["R²aj"]
+        })
+    else:
+        break
+
+# fallback (si nada mejora)
+if not selected:
+    selected = [min(candidatos, key=lambda t: t[0])[1]]
+    best_aic = min(candidatos)[0]
+    best_met = min(candidatos)[2]
+    hist.append({
+        "Paso"  : 1,
+        "Bandas": selected[0],
+        "AIC"   : best_aic,
+        "RMSE"  : best_met["RMSE"],
+        "R²"    : best_met["R²"],
+        "R²aj"  : best_met["R²aj"]
+    })
+
+hist_df = (pd.DataFrame(hist)
+             .loc[:, ["Paso", "Bandas", "AIC", "RMSE", "R²", "R²aj"]])
+
+# Mostrar tabla historial con caption y sin índice
+display(
+    hist_df.style
+    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
+    .set_caption("Historial de selección")
+    .hide(axis="index")
+)
+
+# Mostrar bandas seleccionadas en negrita Markdown
+display(Markdown(f"**Bandas seleccionadas:**  `{', '.join(selected)}`"))
+
+# -------------------------------------------------------------
+# 5 · VALIDACIÓN GROUP‑KFOLD
+gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
+rmse_cv = []
+for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
+    m    = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
+    pred = m.predict(X_tr.iloc[te_idx][selected])
+    rmse_cv.append(rmse(y_tr.iloc[te_idx], pred))
+
+# Mostrar GroupKFold CV en negrita Markdown
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rmse_cv):.3f} ± {np.std(rmse_cv):.3f}"))
+
+# -------------------------------------------------------------
+# 6 · MODELO FINAL Y MÉTRICAS
+mod = LinearRegression().fit(X_tr[selected], y_tr)
+
+# TRAIN
+pred_tr_log = mod.predict(X_tr[selected])
+rmse_tr_log = rmse(y_tr, pred_tr_log)
+r2_tr_log   = r2_score(y_tr, pred_tr_log)
+
+# TEST
+pred_te_log = mod.predict(X_te[selected])
+rmse_te_log = rmse(y_te, pred_te_log)
+r2_te_log   = r2_score(y_te, pred_te_log)
+
+# escala original
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
+
+rmse_tr_lin = rmse(y_tr_lin, pred_tr_lin)
+r2_tr_lin   = r2_score(y_tr_lin, pred_tr_lin)
+rmse_te_lin = rmse(y_te_lin, pred_te_lin)
+r2_te_lin   = r2_score(y_te_lin, pred_te_lin)
+
+metrics_df = pd.DataFrame({
+    "Métrica"    : ["RMSE", "R²"],
+    "Train log"  : [rmse_tr_log, r2_tr_log],
+    "Test log"   : [rmse_te_log, r2_te_log],
+    "Train orig" : [rmse_tr_lin, r2_tr_lin],
+    "Test orig"  : [rmse_te_lin, r2_te_lin]
+})
+
+# Mostrar tabla métricas con caption y sin índice
+display(
+    metrics_df.style
+    .format({
+        "Train log": "{:.3f}", "Test log": "{:.3f}",
+        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
+    })
+    .set_caption("Métricas finales")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 7 · BOOTSTRAP AGRUPADO (coef 95 % CI)
+rng    = np.random.default_rng(RNG_SEED)
+dates  = groups_tr.unique()
+coef_bs = []
+
+for _ in range(N_BOOT):
+    samp = rng.choice(dates, len(dates), replace=True)
+    idx  = groups_tr.isin(samp)
+    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
+    coef_bs.append(m_bs.coef_)
+
+coef_bs = np.array(coef_bs)
+mean_bs = coef_bs.mean(axis=0)
+ci_bs   = np.percentile(coef_bs, [2.5, 97.5], axis=0)
+
+bs_df = pd.DataFrame({
+    "Banda"       : selected,
+    "Media β"     : mean_bs,
+    "IC 95% inf." : ci_bs[0],
+    "IC 95% sup." : ci_bs[1]
+})
+
+# Mostrar tabla bootstrap con caption y sin índice
+display(
+    bs_df.style
+    .format({
+        "Media β": "{:.4f}",
+        "IC 95% inf.": "{:.4f}",
+        "IC 95% sup.": "{:.4f}"
+    })
+    .set_caption("Bootstrap (coeficientes, 95 % CI)")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 8 · ECUACIONES
+alpha      = np.exp(mod.intercept_)
+expr_log   = " + ".join([f"{c:.4f}·{r}" for c, r in zip(mod.coef_, selected)])
+expr_orig  = " · ".join([f"{r}^{c:.4f}" for c, r in zip(mod.coef_, selected)])
+
+display(Markdown("Ecuación (log)"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
+
+display(Markdown("Ecuación (original)"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
+
+# -------------------------------------------------------------
+# 9 · GRÁFICAS DE PARIDAD (TRAIN + TEST) - estilo especificado
+plt.rcParams.update({"axes.titlesize":10,"axes.labelsize":8,
+                     "xtick.labelsize":7,"ytick.labelsize":7})
+
+TRAIN_CLR = "#9D50A6"
+TEST_CLR = "#FFA24B"
+ID_CLR = "#17A77E"
+
+fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+# Escala log
+ax[0].scatter(y_tr, pred_tr_log, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_te, pred_te_log, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# Escala original
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
+
+# restaurar estilos si continuás graficando
+plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
+                     "xtick.labelsize":8,"ytick.labelsize":8})
+
+```
+
+::: {.callout-note title="Conclusión del modelo seleccionado"}
+
+En esta etapa, al usar razones simples de bandas espectrales en lugar de bandas individuales, logro un modelo con mejor ajuste en entrenamiento, con un R² de 0.784 frente a 0.766 del modelo previo. También el error promedio en la validación cruzada mejora ligeramente (RMSE CV 0.119 vs. 0.125), lo que indica una selección más eficiente de variables.
+
+Sin embargo, al evaluar con los datos de la campaña más reciente, el desempeño baja significativamente: el R² cae a 0.212, mucho menor que el 0.484 obtenido anteriormente, y el RMSE aumenta, mostrando que la capacidad de generalización sigue siendo limitada.
+
+El análisis bootstrap confirma que la razón **log(B02/B07)** tiene un coeficiente negativo estable y significativo, mientras que **log(B05/B11)** aporta muy poco y su coeficiente incluye cero en el intervalo de confianza, indicando que su efecto es marginal.
+
+Desde el punto de vista físico, el modelo indica que a medida que aumenta la razón B02/B07, la concentración de sólidos suspendidos tiende a disminuir, mientras que la razón B05/B11 tiene un efecto muy débil e incierto.
+
+A pesar de que el uso de razones simples resulta en un modelo más compacto y con una mejora modesta en el ajuste, la capacidad para predecir sólidos suspendidos en campañas futuras continúa siendo limitada.
+
+:::
+
+
+#### Ajuste del umbral ΔAIC para selección de variables
+
+Para evaluar la robustez y simplicidad del modelo, aumento el umbral mínimo de mejora en el criterio AIC (ΔAIC) de 2 a 4. Esto implica que la selección hacia adelante solo incorpora nuevas variables si la reducción en AIC es al menos 4, promoviendo modelos más parsimoniosos y evitando incluir variables con mejoras marginales que podrían no generalizar bien.
+
+Este ajuste busca balancear mejor el compromiso entre ajuste y complejidad, reduciendo el riesgo de sobreajuste, especialmente relevante al aplicar el modelo a campañas de muestreo futuras.
+
+```{python}
+#|code-fold: true
+# 0 · LIBRERÍAS
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
+
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS     = Path("datos/datos_sol_sus_acolite.csv")     # ← ajustá si hace falta
+DELTA_AIC = 4                                            # ΔAIC mínimo
+N_BOOT    = 2000
+RNG_SEED  = 42
+
+# -------------------------------------------------------------
+# 2 · FUNCIONES AUXILIARES
+def aic_gauss(rss, n, k):           # k = nº coef + intercepto
+    return n * np.log(rss / n) + 2 * k
+
+def fit_metrics(X, y):
+    """Ajusta LR y devuelve métricas + modelo."""
+    m    = LinearRegression().fit(X, y)
+    pred = m.predict(X)
+    rss  = np.sum((y - pred) ** 2)
+    n, p = X.shape
+    return {
+        "AIC" : aic_gauss(rss, n, p + 1),
+        "RMSE": np.sqrt(mean_squared_error(y, pred)),
+        "R²"  : r2_score(y, pred),
+        "R²aj": 1 - (1 - r2_score(y, pred)) * (n - 1) / (n - p - 1),
+        "mod" : m
+    }
+
+def rmse(a, b): return np.sqrt(mean_squared_error(a, b))
+
+# -------------------------------------------------------------
+# 3 · CARGA Y PREPARACIÓN DE DATOS
+df = pd.read_csv(DATOS)
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+bandas = [c for c in df.columns if c.startswith("B")]
+mask   = (df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)
+df     = df.loc[mask].copy()
+
+# variable respuesta en log
+df["log_sol_sus"] = np.log(df["sol_sus"])
+
+# -------------------------------------------------------------
+# 3.1 · GENERAR RAZONES SIMPLES DE BANDAS EN LOGARITMO
+ratio_cols = []
+for i, b1 in enumerate(bandas):
+    for b2 in bandas[i+1:]:
+        col = f"log({b1}/{b2})"
+        df[col] = np.log(df[b1]) - np.log(df[b2])
+        ratio_cols.append(col)
+
+X = df[ratio_cols]                # predictores = razones simples en log
+y = df["log_sol_sus"]
+
+# -------------------------------------------------------------
+# 3.2 · PARTICIÓN TEMPORAL
+last_date = df["fecha"].max()
+m_test    = df["fecha"] == last_date
+m_train   = ~m_test
+
+X_tr, y_tr = X.loc[m_train], y.loc[m_train]
+X_te, y_te = X.loc[m_test] , y.loc[m_test]
+groups_tr  = df.loc[m_train, "fecha"]
+
+print(f"TRAIN campañas : {groups_tr.nunique()}")
+print(f"TEST  campaña  : {last_date.date()} ({m_test.sum()} muestras)")
+
+# -------------------------------------------------------------
+# 4 · FORWARD SELECTION (razones simples logarítmicas) con AIC + Δ
+remaining = ratio_cols.copy()
+selected  = []
+
+# modelo nulo
+rss_null  = np.sum((y_tr - y_tr.mean())**2)
+best_aic  = aic_gauss(rss_null, len(y_tr), k=1)
+
+hist = []
+paso = 0
+while remaining:
+    candidatos = []
+    for col in remaining:
+        cols = selected + [col]
+        m    = fit_metrics(X_tr[cols].values, y_tr.values)
+        candidatos.append((m["AIC"], col, m))
+    candidatos.sort()
+
+    new_aic, best_col, best_met = candidatos[0]
+    if best_aic - new_aic >= DELTA_AIC:     # mejora ≥ ΔAIC
+        selected.append(best_col)
+        remaining.remove(best_col)
+        best_aic = new_aic
+        paso += 1
+        hist.append({
+            "Paso"  : paso,
+            "Bandas": ", ".join(selected),
+            "AIC"   : best_aic,
+            "RMSE"  : best_met["RMSE"],
+            "R²"    : best_met["R²"],
+            "R²aj"  : best_met["R²aj"]
+        })
+    else:
+        break
+
+# fallback (si nada mejora)
+if not selected:
+    selected = [min(candidatos, key=lambda t: t[0])[1]]
+    best_aic = min(candidatos)[0]
+    best_met = min(candidatos)[2]
+    hist.append({
+        "Paso"  : 1,
+        "Bandas": selected[0],
+        "AIC"   : best_aic,
+        "RMSE"  : best_met["RMSE"],
+        "R²"    : best_met["R²"],
+        "R²aj"  : best_met["R²aj"]
+    })
+
+hist_df = (pd.DataFrame(hist)
+             .loc[:, ["Paso", "Bandas", "AIC", "RMSE", "R²", "R²aj"]])
+
+# Mostrar tabla historial con caption y sin índice
+display(
+    hist_df.style
+    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
+    .set_caption("Historial de selección")
+    .hide(axis="index")
+)
+
+# Mostrar bandas seleccionadas en negrita Markdown
+display(Markdown(f"**Bandas seleccionadas:**  `{', '.join(selected)}`"))
+
+# -------------------------------------------------------------
+# 5 · VALIDACIÓN GROUP‑KFOLD
+gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
+rmse_cv = []
+for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
+    m    = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
+    pred = m.predict(X_tr.iloc[te_idx][selected])
+    rmse_cv.append(rmse(y_tr.iloc[te_idx], pred))
+
+# Mostrar GroupKFold CV en negrita Markdown
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rmse_cv):.3f} ± {np.std(rmse_cv):.3f}"))
+
+# -------------------------------------------------------------
+# 6 · MODELO FINAL Y MÉTRICAS
+mod = LinearRegression().fit(X_tr[selected], y_tr)
+
+# TRAIN
+pred_tr_log = mod.predict(X_tr[selected])
+rmse_tr_log = rmse(y_tr, pred_tr_log)
+r2_tr_log   = r2_score(y_tr, pred_tr_log)
+
+# TEST
+pred_te_log = mod.predict(X_te[selected])
+rmse_te_log = rmse(y_te, pred_te_log)
+r2_te_log   = r2_score(y_te, pred_te_log)
+
+# escala original
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
+
+rmse_tr_lin = rmse(y_tr_lin, pred_tr_lin)
+r2_tr_lin   = r2_score(y_tr_lin, pred_tr_lin)
+rmse_te_lin = rmse(y_te_lin, pred_te_lin)
+r2_te_lin   = r2_score(y_te_lin, pred_te_lin)
+
+metrics_df = pd.DataFrame({
+    "Métrica"    : ["RMSE", "R²"],
+    "Train log"  : [rmse_tr_log, r2_tr_log],
+    "Test log"   : [rmse_te_log, r2_te_log],
+    "Train orig" : [rmse_tr_lin, r2_tr_lin],
+    "Test orig"  : [rmse_te_lin, r2_te_lin]
+})
+
+# Mostrar tabla métricas con caption y sin índice
+display(
+    metrics_df.style
+    .format({
+        "Train log": "{:.3f}", "Test log": "{:.3f}",
+        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
+    })
+    .set_caption("Métricas finales")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 7 · BOOTSTRAP AGRUPADO (coef 95 % CI)
+rng    = np.random.default_rng(RNG_SEED)
+dates  = groups_tr.unique()
+coef_bs = []
+
+for _ in range(N_BOOT):
+    samp = rng.choice(dates, len(dates), replace=True)
+    idx  = groups_tr.isin(samp)
+    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
+    coef_bs.append(m_bs.coef_)
+
+coef_bs = np.array(coef_bs)
+mean_bs = coef_bs.mean(axis=0)
+ci_bs   = np.percentile(coef_bs, [2.5, 97.5], axis=0)
+
+bs_df = pd.DataFrame({
+    "Banda"       : selected,
+    "Media β"     : mean_bs,
+    "IC 95% inf." : ci_bs[0],
+    "IC 95% sup." : ci_bs[1]
+})
+
+# Mostrar tabla bootstrap con caption y sin índice
+display(
+    bs_df.style
+    .format({
+        "Media β": "{:.4f}",
+        "IC 95% inf.": "{:.4f}",
+        "IC 95% sup.": "{:.4f}"
+    })
+    .set_caption("Bootstrap (coeficientes, 95 % CI)")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 8 · ECUACIONES
+alpha      = np.exp(mod.intercept_)
+expr_log   = " + ".join([f"{c:.4f}·{r}" for c, r in zip(mod.coef_, selected)])
+expr_orig  = " · ".join([f"{r}^{c:.4f}" for c, r in zip(mod.coef_, selected)])
+
+display(Markdown("Ecuación (log)"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
+
+display(Markdown("Ecuación (original)"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
+
+# -------------------------------------------------------------
+# 9 · GRÁFICAS DE PARIDAD (TRAIN + TEST) - estilo especificado
+plt.rcParams.update({"axes.titlesize":10,"axes.labelsize":8,
+                     "xtick.labelsize":7,"ytick.labelsize":7})
+
+TRAIN_CLR = "#9D50A6"
+TEST_CLR = "#FFA24B"
+ID_CLR = "#17A77E"
+
+fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+# Escala log
+ax[0].scatter(y_tr, pred_tr_log, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_te, pred_te_log, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# Escala original
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
+
+# restaurar estilos si continuás graficando
+plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
+                     "xtick.labelsize":8,"ytick.labelsize":8})
+
+```
+
+
+::: {.callout-note title="Impacto del aumento del umbral ΔAIC en la selección de variables"}
+
+Al aumentar ΔAIC a 4, el modelo se simplifica seleccionando solo la razón **log(B02/B07)**, manteniendo un buen ajuste en entrenamiento (R² = 0.739). Sin embargo, el desempeño en la campaña de prueba es bajo, con R² cercano a cero, indicando poca capacidad de generalización. El análisis bootstrap muestra estabilidad en el coeficiente seleccionado.
+
+Por lo tanto, un mayor ΔAIC favorece modelos más simples, pero no mejora la predicción en nuevas campañas, por lo que es necesario explorar modelos más complejos o incluir más variables.
+
+:::
+
+
+
+### Selección de bandas, razones y potencias para modelar sólidos suspendidos
+
+En esta sección amplío el conjunto de variables predictoras al incluir no solo logaritmos simples de bandas espectrales, sino también sus potencias cuadráticas y cúbicas, así como razones logarítmicas entre bandas. El objetivo es capturar relaciones no lineales y combinadas que podrían mejorar la capacidad predictiva del modelo.
+
+Utilizo una estrategia de selección hacia adelante basada en el criterio AIC (`ΔAIC ≥ 4`), priorizando modelos más parsimoniosos pero informativos. La validación se realiza con partición temporal (hold-out) y GroupKFold, y se evalúa la estabilidad del modelo mediante bootstrap de coeficientes (IC del 95 %). Finalmente, se comparan las predicciones con observaciones en escalas logarítmica y original.
+
+```{python}
+#|code-fold: true
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
+
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS     = Path("datos/datos_sol_sus_acolite.csv")
+DELTA_AIC = 4                # umbral de mejora
+N_BOOT    = 2000
+RNG_SEED  = 42
+
+# -------------------------------------------------------------
+# 2 · FUNCIONES
+def aic_gauss(rss, n, k):              # k = coef + intercepto
+    return n*np.log(rss/n) + 2*k
+
+def fit_metrics(X, y):
+    m = LinearRegression().fit(X, y)
+    pred = m.predict(X)
+    rss  = np.sum((y-pred)**2)
+    n,p  = X.shape
+    return {
+        "AIC" : aic_gauss(rss, n, p+1),
+        "RMSE": np.sqrt(mean_squared_error(y, pred)),
+        "R²"  : r2_score(y, pred),
+        "R²aj": 1 - (1-r2_score(y,pred))*(n-1)/(n-p-1),
+        "mod" : m
+    }
+
+rmse = lambda a,b: np.sqrt(mean_squared_error(a,b))
+
+# -------------------------------------------------------------
+# 3 · CARGA Y PREPARACIÓN
+df = pd.read_csv(DATOS)
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+bandas = [c for c in df.columns if c.startswith("B")]
+df = df.loc[(df["sol_sus"]>0) & (df[bandas]>0).all(1)].copy()
+
+df["log_sol_sus"] = np.log(df["sol_sus"])
+
+# 3.1  log(Bx)  +  (log(Bx))²,(log(Bx))³
+log_cols   = []
+poly_cols  = []
+for b in bandas:
+    log_b = f"log_{b}"
+    df[log_b] = np.log(df[b])
+    df[f"{log_b}^2"] = df[log_b]**2
+    df[f"{log_b}^3"] = df[log_b]**3
+    log_cols.append(log_b)
+    poly_cols.extend([f"{log_b}^2", f"{log_b}^3"])
+
+# 3.2  razones en log: log(Bi/Bj) = logBi - logBj
+ratio_cols = []
+for i,b1 in enumerate(bandas):
+    for b2 in bandas[i+1:]:
+        col = f"log({b1}/{b2})"
+        df[col] = df[f"log_{b1}"] - df[f"log_{b2}"]
+        ratio_cols.append(col)
+
+cand_cols = log_cols + poly_cols + ratio_cols
+print(f"Total de variables candidatas: {len(cand_cols)}")
+
+X = df[cand_cols]
+y = df["log_sol_sus"]
+
+# -------------------------------------------------------------
+# 4 · HOLD‑OUT TEMPORAL
+last = df["fecha"].max()
+m_te  = df["fecha"]==last
+m_tr  = ~m_te
+X_tr, y_tr = X[m_tr], y[m_tr]
+X_te, y_te = X[m_te], y[m_te]
+groups_tr  = df.loc[m_tr,"fecha"]
+
+print(f"\nTRAIN campañas : {groups_tr.nunique()}")
+print(f"TEST  campaña  : {last.date()}  ({m_te.sum()} muestras)")
+
+# -------------------------------------------------------------
+# 5 · FORWARD‑AIC (Δ ≥ {DELTA_AIC})
+remaining = cand_cols.copy()
+selected  = []
+
+rss0   = np.sum((y_tr - y_tr.mean())**2)
+best_aic = aic_gauss(rss0, len(y_tr), 1)
+
+hist=[]; step=0
+while remaining:
+    scores=[]
+    for col in remaining:
+        cols = selected + [col]
+        mtr  = fit_metrics(X_tr[cols].values, y_tr.values)
+        scores.append((mtr["AIC"], col, mtr))
+    scores.sort()
+    new_aic, best_col, m_info = scores[0]
+
+    if best_aic - new_aic >= DELTA_AIC:
+        selected.append(best_col)
+        remaining.remove(best_col)
+        best_aic = new_aic
+        step += 1
+        hist.append({
+            "Paso":step, "Variables":", ".join(selected),
+            "AIC":best_aic, "RMSE":m_info["RMSE"],
+            "R²":m_info["R²"], "R²aj":m_info["R²aj"]
+        })
+    else:
+        break
+
+if not selected:
+    best_col = min(scores, key=lambda t:t[0])[1]
+    selected = [best_col]
+    hist.append({"Paso":1,"Variables":best_col,
+                 **{k:v for k,v in scores[0][2].items() if k!="mod"}})
+
+hist_df = pd.DataFrame(hist)
+
+# Mostrar tabla historial con caption y sin índice
+display(
+    hist_df.style
+    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
+    .set_caption("Historial de selección")
+    .hide(axis="index")
+)
+
+# Mostrar variables seleccionadas en negrita Markdown
+display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
+
+# -------------------------------------------------------------
+# 6 · VALIDACIÓN GROUP‑KFOLD
+gkf = GroupKFold(n_splits=min(5,groups_tr.nunique()))
+rm = []
+for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
+    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
+    rm.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
+
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rm):.3f} ± {np.std(rm):.3f}"))
+
+# -------------------------------------------------------------
+# 7 · MODELO FINAL Y MÉTRICAS
+mod = LinearRegression().fit(X_tr[selected], y_tr)
+
+pred_tr = mod.predict(X_tr[selected])
+pred_te = mod.predict(X_te[selected])
+
+metrics_df = pd.DataFrame({
+    "Métrica"    : ["RMSE", "R²"],
+    "Train log"  : [rmse(y_tr,pred_tr), r2_score(y_tr,pred_tr)],
+    "Test log"   : [rmse(y_te,pred_te), r2_score(y_te,pred_te)],
+    "Train orig" : [rmse(np.exp(y_tr), np.exp(pred_tr)), r2_score(np.exp(y_tr), np.exp(pred_tr))],
+    "Test orig"  : [rmse(np.exp(y_te), np.exp(pred_te)), r2_score(np.exp(y_te), np.exp(pred_te))]
+})
+
+# Mostrar tabla métricas con caption y sin índice
+display(
+    metrics_df.style
+    .format({
+        "Train log": "{:.3f}", "Test log": "{:.3f}",
+        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
+    })
+    .set_caption("Métricas finales")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 8 · BOOTSTRAP AGRUPADO (IC 95 %)
+rng = np.random.default_rng(RNG_SEED)
+dates = groups_tr.unique()
+coef_bs=[]
+for _ in range(N_BOOT):
+    samp = rng.choice(dates, len(dates), replace=True)
+    idx  = groups_tr.isin(samp)
+    m_bs = LinearRegression().fit(X_tr.loc[idx,selected], y_tr.loc[idx])
+    coef_bs.append(m_bs.coef_)
+coef_bs = np.asarray(coef_bs)
+ci_lo, ci_hi = np.percentile(coef_bs,[2.5,97.5],axis=0)
+
+bs_df = pd.DataFrame({
+    "Variable"    : selected,
+    "Media β"     : coef_bs.mean(0),
+    "IC 95% inf." : ci_lo,
+    "IC 95% sup." : ci_hi
+})
+
+# Mostrar tabla bootstrap con caption y sin índice
+display(
+    bs_df.style
+    .format({
+        "Media β": "{:.4f}",
+        "IC 95% inf.": "{:.4f}",
+        "IC 95% sup.": "{:.4f}"
+    })
+    .set_caption("Bootstrap (coeficientes, 95 % CI)")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 9 · ECUACIÓN DEL MODELO
+alpha = np.exp(mod.intercept_)
+expr_log  = " + ".join([f"{c:.4f}·{v}" for c,v in zip(mod.coef_,selected)])
+expr_orig = " · ".join([f"{v}^{c:.4f}" for c,v in zip(mod.coef_,selected)])
+
+display(Markdown("Ecuación (log)"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
+
+display(Markdown("Ecuación (original)"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
+
+# -------------------------------------------------------------
+# 10 · PARIDAD TRAIN + TEST (log y mg/L) con estilo de colores y leyenda
+
+plt.rcParams.update({"axes.titlesize":10,"axes.labelsize":8,
+                     "xtick.labelsize":7,"ytick.labelsize":7})
+
+TRAIN_CLR = "#9D50A6"
+TEST_CLR = "#FFA24B"
+ID_CLR = "#17A77E"
+
+fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+# Escala log
+ax[0].scatter(y_tr, pred_tr, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_te, pred_te, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# Escala original
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr), np.exp(pred_te)
+
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
+
+# Restaurar estilos para otras gráficas
+plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
+                     "xtick.labelsize":8,"ytick.labelsize":8})
+
+```
+
+::: {.callout-note title="Conclusión del modelo seleccionado"}
+
+Este modelo combina la razón espectral **log(B02/B07)** con una transformación cúbica de la banda **B8A**, logrando el mejor desempeño hasta ahora: `R² = 0.688` en la campaña de prueba, mucho mayor que en modelos anteriores (~0.2 o menos). También mejora el ajuste (`R² = 0.812` en entrenamiento) sin perder generalización (`RMSE_CV = 0.123 ± 0.034`).
+
+El término dominante sigue siendo **log(B02/B07)**, que ya aparecía en modelos previos y mantiene un efecto negativo claro. Esto indica que **una mayor reflectancia relativa en B02 frente a B07 se asocia a menos sólidos suspendidos**, lo que tiene sentido: B02 (azul) penetra más el agua, y si hay más sólidos en suspensión, se dispersa o absorbe más rápido que B07 (NIR).
+
+El aporte de **log_B8A³** es marginal: su coeficiente es pequeño y no significativo (el IC incluye cero), pero su inclusión mejoró el AIC ≥ 4, lo que sugiere que ayuda a capturar alguna curvatura en los datos.
+
+:::
+
+
+#### Evaluación del aporte marginal de `log_B8A³`
+
+Para verificar si la variable **log_B8A³** mejora efectivamente la predicción, ajusto un modelo más simple utilizando solo `log(B02/B07)` y comparo su desempeño sobre la campaña de prueba. Esta comparación permite confirmar si el descenso en AIC justifica una mejora real o si el nuevo término solo ajusta mejor los datos de entrenamiento.
+
+
+```{python}
+#|code-fold: true
+selected_simple = ['log(B02/B07)']
+
+# Entrena modelo simple
+mod_simple = LinearRegression().fit(X_tr[selected_simple], y_tr)
+pred_te_simple = mod_simple.predict(X_te[selected_simple])
+rmse_te_simple = rmse(y_te, pred_te_simple)
+r2_te_simple = r2_score(y_te, pred_te_simple)
+
+print(f"Modelo simple TEST log RMSE = {rmse_te_simple:.3f} | R² = {r2_te_simple:.3f}")
+
+```
+
+
+::: {.callout-note title="Conclusión sobre el aporte de `log_B8A³`"}
+
+Al comparar el modelo completo con otro más simple que usa solo `log(B02/B07)`, se observa una mejora notable en el desempeño sobre la campaña de prueba: el `RMSE` disminuye de 0.391 a 0.244 y el `R²` se incrementa de 0.20 a 0.69. Esto sugiere que `log_B8A³` contribuye a mejorar la capacidad predictiva del modelo.
+
+Sin embargo, el coeficiente estimado para `log_B8A³` es pequeño, y su intervalo de confianza incluye el cero, lo que indica **incertidumbre sobre su efecto real**. Por lo tanto, aunque su inclusión mejora el ajuste y la predicción, el aporte es **marginal y debe interpretarse con cautela**.
+
+:::
+
+
+
+
+
+### Razones espectrales informadas (NIR/Blue, Red/Green, NDWI) para mejorar el modelo
+
+En esta sección incorporo **razones espectrales con base teórica o empírica** utilizadas comúnmente en teledetección para el análisis de calidad del agua. Estas incluyen cocientes como `NIR/Blue`, `Red/Green`, y el índice `NDWI`, que podrían capturar características ópticas relevantes no reflejadas por combinaciones arbitrarias de bandas.
+
+Estas nuevas variables se añaden a las transformaciones ya consideradas (logaritmos, potencias y razones logarítmicas) y se someten al mismo procedimiento de selección automática (`Forward AIC`) con un umbral de mejora ΔAIC ≥ 4. El objetivo es evaluar si estas razones “informadas” permiten mejorar el ajuste del modelo sin sacrificar interpretabilidad ni aumentar en exceso su complejidad.
+
+El enfoque conserva la validación cruzada temporal (`GroupKFold`) y el análisis de incertidumbre mediante bootstrap, para mantener la robustez en la comparación con resultados anteriores.
+
+```{python}
+#|code-fold: true
+# -------------------------------------------------------------
+# 0 · LIBRERÍAS
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
+
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS      = Path("datos/datos_sol_sus_acolite.csv")
+DELTA_AIC  = 2.0            # ∆AIC mínimo
+N_BOOT     = 2000
+RNG_SEED   = 42
+
+# -------------------------------------------------------------
+# 2 · FUNCIONES AUXILIARES
+def aic_gauss(rss, n, k):
+    return n * np.log(rss / n) + 2 * k
+
+def fit_metrics(X, y):
+    m    = LinearRegression().fit(X, y)
+    pred = m.predict(X)
+    rss  = np.sum((y - pred) ** 2)
+    n, p = X.shape
+    r2   = r2_score(y, pred)
+    return {
+        "AIC" : aic_gauss(rss, n, p + 1),
+        "RMSE": np.sqrt(mean_squared_error(y, pred)),
+        "R²"  : r2,
+        "R²aj": 1 - (1 - r2) * (n - 1) / (n - p - 1),
+        "mod" : m
+    }
+
+rmse = lambda a, b: np.sqrt(mean_squared_error(a, b))
+
+# -------------------------------------------------------------
+# 3 · CARGA Y PREPARACIÓN
+df = pd.read_csv(DATOS)
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+bandas = [c for c in df.columns if c.startswith("B")]
+df = df.loc[(df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)].copy()
+
+df["log_sol_sus"] = np.log(df["sol_sus"])
+
+# 3.1 · log‑bandas individuales
+log_bands = []
+for b in bandas:
+    col = f"log_{b}"
+    df[col] = np.log(df[b])
+    log_bands.append(col)
+
+# 3.2 · cocientes informados + NDWI
+req = {"B02","B03","B04","B08"}
+if not req.issubset(df.columns):
+    raise ValueError(f"Faltan bandas necesarias: {req - set(df.columns)}")
+
+df["NIR_Blue"]  = df["B08"] / df["B02"]
+df["Red_Green"] = df["B04"] / df["B03"]
+df["NDWI"]      = (df["B03"] - df["B08"]) / (df["B03"] + df["B08"])
+indices = ["NIR_Blue", "Red_Green", "NDWI"]
+
+# -------------------------------------------------------------
+# 4 · MATRICES DE MODELADO
+vars_candidatas = log_bands + indices
+display(Markdown(f"**Total de variables candidatas:** {len(vars_candidatas)}"))
+
+X = df[vars_candidatas]
+y = df["log_sol_sus"]
+
+# -------------------------------------------------------------
+# 5 · HOLD‑OUT TEMPORAL
+last_date = df["fecha"].max()
+mask_te   = df["fecha"] == last_date
+mask_tr   = ~mask_te
+
+X_tr, y_tr = X.loc[mask_tr], y.loc[mask_tr]
+X_te, y_te = X.loc[mask_te], y.loc[mask_te]
+groups_tr  = df.loc[mask_tr, "fecha"]
+
+display(Markdown(f"**TRAIN campañas:** {groups_tr.nunique()}"))
+display(Markdown(f"**TEST campaña:** {last_date.date()}  ({mask_te.sum()} muestras)"))
+
+# -------------------------------------------------------------
+# 6 · FORWARD SELECTION (∆AIC ≥ {DELTA_AIC})
+remaining = vars_candidatas.copy()
+selected  = []
+
+rss_null = np.sum((y_tr - y_tr.mean()) ** 2)
+best_aic = aic_gauss(rss_null, len(y_tr), k=1)
+
+hist, step = [], 0
+while remaining:
+    scores = []
+    for var in remaining:
+        cols = selected + [var]
+        met  = fit_metrics(X_tr[cols].values, y_tr.values)
+        scores.append((met["AIC"], var, met))
+    scores.sort()
+    new_aic, best_var, best_met = scores[0]
+
+    if best_aic - new_aic >= DELTA_AIC:
+        selected.append(best_var)
+        remaining.remove(best_var)
+        best_aic = new_aic
+        step += 1
+        hist.append({
+            "Paso": step,
+            "Variables": ", ".join(selected),
+            "AIC": best_aic,
+            "RMSE": best_met["RMSE"],
+            "R²": best_met["R²"],
+            "R²aj": best_met["R²aj"]
+        })
+    else:
+        break
+
+if not selected:
+    best_var = min(scores, key=lambda t: t[0])[1]
+    selected = [best_var]
+    best_aic = min(scores)[0]
+    best_met = min(scores)[2]
+    hist.append({
+        "Paso": 1,
+        "Variables": best_var,
+        **{k: best_met[k] for k in ("AIC","RMSE","R²","R²aj")}
+    })
+
+hist_df = pd.DataFrame(hist, columns=["Paso","Variables","AIC","RMSE","R²","R²aj"])
+display(
+    hist_df.style
+    .format({"AIC":"{:.3f}","RMSE":"{:.3f}","R²":"{:.3f}","R²aj":"{:.3f}"})
+    .set_caption("Historial de selección")
+    .hide(axis="index")
+)
+
+display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
+
+# -------------------------------------------------------------
+# 7 · VALIDACIÓN Group‑KFold
+gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
+rm_cv = []
+for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
+    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
+    rm_cv.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
+
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rm_cv):.3f} ± {np.std(rm_cv):.3f}"))
+
+# -------------------------------------------------------------
+# 8 · MODELO FINAL Y MÉTRICAS
+mod = LinearRegression().fit(X_tr[selected], y_tr)
+
+pred_tr_log = mod.predict(X_tr[selected])
+pred_te_log = mod.predict(X_te[selected])
+
+metrics_df = pd.DataFrame({
+    "Métrica": ["RMSE", "R²"],
+    "Train log": [rmse(y_tr, pred_tr_log), r2_score(y_tr, pred_tr_log)],
+    "Test log": [rmse(y_te, pred_te_log), r2_score(y_te, pred_te_log)],
+    "Train orig": [rmse(np.exp(y_tr), np.exp(pred_tr_log)), r2_score(np.exp(y_tr), np.exp(pred_tr_log))],
+    "Test orig": [rmse(np.exp(y_te), np.exp(pred_te_log)), r2_score(np.exp(y_te), np.exp(pred_te_log))]
+})
+
+display(
+    metrics_df.style
+    .format({
+        "Train log": "{:.3f}", "Test log": "{:.3f}",
+        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
+    })
+    .set_caption("Métricas finales")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 9 · BOOTSTRAP AGRUPADO (IC 95 %)
+rng   = np.random.default_rng(RNG_SEED)
+dates = groups_tr.unique()
+coef_bs=[]
+for _ in range(N_BOOT):
+    samp = rng.choice(dates, len(dates), replace=True)
+    idx  = groups_tr.isin(samp)
+    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
+    coef_bs.append(m_bs.coef_)
+
+coef_bs = np.asarray(coef_bs)
+ci_lo, ci_hi = np.percentile(coef_bs, [2.5, 97.5], axis=0)
+
+bs_df = pd.DataFrame({
+    "Variable"    : selected,
+    "Media β"     : coef_bs.mean(axis=0),
+    "IC 95% inf." : ci_lo,
+    "IC 95% sup." : ci_hi
+})
+
+display(
+    bs_df.style
+    .format({"Media β":"{:.4f}","IC 95% inf.":"{:.4f}","IC 95% sup.":"{:.4f}"})
+    .set_caption("Bootstrap (coeficientes, 95 % CI)")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 10 · ECUACIONES
+alpha     = np.exp(mod.intercept_)
+expr_log  = " + ".join([f"{c:.4f}·{v}" for c, v in zip(mod.coef_, selected)])
+expr_orig = " · ".join([f"{v}^{c:.4f}" for c, v in zip(mod.coef_, selected)])
+
+display(Markdown("Ecuación (log)"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
+
+display(Markdown("Ecuación (original)"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
+
+# -------------------------------------------------------------
+# 11 · GRÁFICAS DE PARIDAD (TRAIN + TEST) con estilo uniforme
+plt.rcParams.update({
+    "axes.titlesize":10, "axes.labelsize":8,
+    "xtick.labelsize":7,"ytick.labelsize":7
+})
+
+TRAIN_CLR = "#9D50A6"
+TEST_CLR  = "#FFA24B"
+ID_CLR    = "#17A77E"
+
+fig, ax = plt.subplots(1,2, figsize=(9,4))
+
+# --- Escala log
+ax[0].scatter(y_tr, pred_tr_log, alpha=.6, color=TRAIN_CLR, edgecolor='k', label="Train (●)")
+ax[0].scatter(y_te, pred_te_log, alpha=.6, color=TEST_CLR, marker='s', edgecolor='k', label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, '--', color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# --- Escala original
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=.6, color=TRAIN_CLR, edgecolor='k', label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=.6, color=TEST_CLR, marker='s', edgecolor='k', label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, '--', color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
+
+# restaurar tamaño por defecto
+plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
+                     "xtick.labelsize":8,"ytick.labelsize":8})
+
+```
+
+::: {.callout-note title="Conclusión del modelo seleccionado"}
+
+La inclusión de razones espectrales informadas, como `NIR_Blue`, permitió ajustar un modelo con buen desempeño en el conjunto de entrenamiento (R² = 0.80) y una estructura simple de solo dos variables. Sin embargo, al evaluarlo sobre una campaña futura, el modelo mostró una caída significativa de desempeño (R² = 0.02 en escala original), similar a modelos anteriores más simples.
+
+El cociente `NIR_Blue` resultó la variable más informativa, con un coeficiente robusto y un intervalo de confianza estrecho. En contraste, la contribución de `log_B11` fue poco significativa, con un intervalo de coeficiente que incluye el cero, lo cual indica alta incertidumbre en su efecto.
+
+Si bien estas razones espectrales permiten interpretar el modelo desde una base física, **no mejoran la capacidad de generalización** respecto a modelos más simples basados en razones logarítmicas. Esto sugiere que el modelo está alcanzando un límite explicativo con las bandas actuales, y que para mejorar la predicción sobre nuevas campañas podría ser necesario incorporar variables adicionales o utilizar modelos más flexibles.
+
+:::
+
+
+
+
+
+### Selección automática con AIC a partir de índices espectrales clásicos (NDVI, TurbI1, RE_NDVI y NDMI)
+
+
+
+```{python}
+#|code-fold: true
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
+
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS      = Path("datos/datos_sol_sus_acolite.csv")   # ← ajusta si hace falta
+DELTA_AIC  = 2.0                                       # ∆AIC mínimo entre pasos
+N_BOOT     = 2000                                      # réplicas bootstrap agrupado
+RNG_SEED   = 42
+
+# -------------------------------------------------------------
+# 2 · FUNCIONES AUXILIARES
+def aic_gauss(rss: float, n: int, k: int) -> float:
+    return n * np.log(rss / n) + 2 * k
+
+def fit_metrics(X: np.ndarray, y: np.ndarray):
+    m = LinearRegression().fit(X, y)
+    pred = m.predict(X)
+    rss = np.sum((y - pred) ** 2)
+    n, p = X.shape
+    r2 = r2_score(y, pred)
+    return {
+        "AIC": aic_gauss(rss, n, p + 1),
+        "RMSE": np.sqrt(mean_squared_error(y, pred)),
+        "R²": r2,
+        "R²aj": 1 - (1 - r2) * (n - 1) / (n - p - 1),
+        "mod": m
+    }
+
+rmse = lambda a, b: np.sqrt(mean_squared_error(a, b))
+
+# -------------------------------------------------------------
+# 3 · CARGA Y PREPARACIÓN
+df = pd.read_csv(DATOS)
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+bandas = [c for c in df.columns if c.startswith("B")]
+mask = (df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)
+df = df.loc[mask].copy()
+
+df["log_sol_sus"] = np.log(df["sol_sus"])
+
+log_bands = []
+for b in bandas:
+    col = f"log_{b}"
+    df[col] = np.log(df[b])
+    log_bands.append(col)
+
+req = {"B03","B04","B05","B08","B11"}
+faltan = req - set(df.columns)
+if faltan:
+    raise ValueError(f"Faltan bandas necesarias: {faltan}")
+
+df["NDVI"]    = (df["B08"] - df["B04"]) / (df["B08"] + df["B04"])
+df["TurbI1"]  = df["B03"] / df["B04"]
+df["RE_NDVI"] = (df["B08"] - df["B05"]) / (df["B08"] + df["B05"])
+df["NDMI"]    = (df["B08"] - df["B11"]) / (df["B08"] + df["B11"])
+
+indices = ["NDVI", "TurbI1", "RE_NDVI", "NDMI"]
+
+vars_candidatas = log_bands + indices
+display(Markdown(f"**Total de variables candidatas:** {len(vars_candidatas)}"))
+
+X = df[vars_candidatas]
+y = df["log_sol_sus"]
+
+# -------------------------------------------------------------
+# 4 · HOLD‑OUT TEMPORAL
+last_date = df["fecha"].max()
+mask_te = df["fecha"] == last_date
+mask_tr = ~mask_te
+
+X_tr, y_tr = X.loc[mask_tr], y.loc[mask_tr]
+X_te, y_te = X.loc[mask_te], y.loc[mask_te]
+groups_tr = df.loc[mask_tr, "fecha"]
+
+display(Markdown(f"**TRAIN campañas:** {groups_tr.nunique()}"))
+display(Markdown(f"**TEST campaña:** {last_date.date()}  ({mask_te.sum()} muestras)"))
+
+# -------------------------------------------------------------
+# 5 · FORWARD SELECTION guiado por AIC
+remaining = vars_candidatas.copy()
+selected = []
+
+rss_null = np.sum((y_tr - y_tr.mean()) ** 2)
+best_aic = aic_gauss(rss_null, len(y_tr), k=1)
+
+hist = []
+step = 0
+
+while remaining:
+    candidatos = []
+    for v in remaining:
+        cols = selected + [v]
+        met = fit_metrics(X_tr[cols].values, y_tr.values)
+        candidatos.append((met["AIC"], v, met))
+    candidatos.sort(key=lambda t: t[0])
+
+    new_aic, best_var, best_met = candidatos[0]
+    if best_aic - new_aic >= DELTA_AIC:
+        selected.append(best_var)
+        remaining.remove(best_var)
+        best_aic = new_aic
+        step += 1
+        hist.append({
+            "Paso": step,
+            "Variables": ", ".join(selected),
+            "AIC": best_aic,
+            "RMSE": best_met["RMSE"],
+            "R²": best_met["R²"],
+            "R²aj": best_met["R²aj"]
+        })
+    else:
+        break
+
+if not selected:
+    best_aic, best_var, best_met = min(candidatos, key=lambda t: t[0])
+    selected = [best_var]
+    hist = [{
+        "Paso": 1,
+        "Variables": best_var,
+        "AIC": best_aic,
+        **{k: best_met[k] for k in ("RMSE", "R²", "R²aj")}
+    }]
+
+hist_df = pd.DataFrame(hist, columns=["Paso", "Variables", "AIC", "RMSE", "R²", "R²aj"])
+
+display(
+    hist_df.style
+    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
+    .set_caption("Historial de selección")
+    .hide(axis="index")
+)
+
+display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
+
+# -------------------------------------------------------------
+# 6 · VALIDACIÓN GROUP‑KFOLD
+gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
+rmse_cv = []
+for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
+    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
+    rmse_cv.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
+
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rmse_cv):.3f} ± {np.std(rmse_cv):.3f}"))
+
+# -------------------------------------------------------------
+# 7 · MODELO FINAL Y MÉTRICAS
+mod = LinearRegression().fit(X_tr[selected], y_tr)
+
+pred_tr_log = mod.predict(X_tr[selected])
+pred_te_log = mod.predict(X_te[selected])
+
+metrics_df = pd.DataFrame({
+    "Métrica": ["RMSE", "R²"],
+    "Train log": [rmse(y_tr, pred_tr_log), r2_score(y_tr, pred_tr_log)],
+    "Test log": [rmse(y_te, pred_te_log), r2_score(y_te, pred_te_log)],
+    "Train orig": [rmse(np.exp(y_tr), np.exp(pred_tr_log)), r2_score(np.exp(y_tr), np.exp(pred_tr_log))],
+    "Test orig": [rmse(np.exp(y_te), np.exp(pred_te_log)), r2_score(np.exp(y_te), np.exp(pred_te_log))]
+})
+
+display(
+    metrics_df.style
+    .format({
+        "Train log": "{:.3f}", "Test log": "{:.3f}",
+        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
+    })
+    .set_caption("Métricas finales")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 8 · BOOTSTRAP AGRUPADO (IC 95 %)
+rng = np.random.default_rng(RNG_SEED)
+dates = groups_tr.unique()
+coef_bs = []
+
+for _ in range(N_BOOT):
+    samp = rng.choice(dates, len(dates), replace=True)
+    idx = groups_tr.isin(samp)
+    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
+    coef_bs.append(m_bs.coef_)
+
+coef_bs = np.array(coef_bs)
+mean_bs = coef_bs.mean(axis=0)
+ci_bs = np.percentile(coef_bs, [2.5, 97.5], axis=0)
+
+bs_df = pd.DataFrame({
+    "Variable": selected,
+    "Media β": mean_bs,
+    "IC 95% inf.": ci_bs[0],
+    "IC 95% sup.": ci_bs[1]
+})
+
+display(
+    bs_df.style
+    .format({
+        "Media β": "{:.4f}",
+        "IC 95% inf.": "{:.4f}",
+        "IC 95% sup.": "{:.4f}"
+    })
+    .set_caption("Bootstrap (coeficientes, 95 % CI)")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 9 · ECUACIONES
+alpha = np.exp(mod.intercept_)
+expr_log = " + ".join([f"{c:.4f}·{v}" for c, v in zip(mod.coef_, selected)])
+expr_orig = " · ".join([f"{v}^{c:.4f}" for c, v in zip(mod.coef_, selected)])
+
+display(Markdown("Ecuación (log)"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
+
+display(Markdown("Ecuación (original)"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
+
+# -------------------------------------------------------------
+# 10 · GRÁFICAS DE PARIDAD (TRAIN + TEST) con estilo de colores y leyenda
+
+plt.rcParams.update({
+    "axes.titlesize": 10,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7
+})
+
+TRAIN_CLR = "#9D50A6"
+TEST_CLR = "#FFA24B"
+ID_CLR = "#17A77E"
+
+fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+
+# Escala log
+ax[0].scatter(y_tr, pred_tr_log, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_te, pred_te_log, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# Escala original
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
+
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
+
+# Restaurar configuración original para otras gráficas
+plt.rcParams.update({
+    "axes.titlesize": 11,
+    "axes.labelsize": 9,
+    "xtick.labelsize": 8,
+    "ytick.labelsize": 8
+})
+
+```
+
+
+
+
+
+### todo junto
+
+
+
+```{python}
+#|code-fold: true
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from itertools import combinations
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+from IPython.display import display, Markdown
+
+# -------------------------------------------------------------
+# 1 · CONFIGURACIÓN
+DATOS      = Path("datos/datos_sol_sus_acolite.csv")   
+DELTA_AIC  = 4                  
+N_BOOT     = 2000
+RNG_SEED   = 42
+
+# -------------------------------------------------------------
+# 2 · FUNCIONES AUXILIARES
+def aic_gauss(rss, n, k):               
+    return n*np.log(rss/n) + 2*k
+
+def fit_metrics(X, y):
+    m = LinearRegression().fit(X, y)
+    pred = m.predict(X)
+    rss = np.sum((y - pred)**2)
+    n, p = X.shape
+    r2 = r2_score(y, pred)
+    return {
+        "AIC": aic_gauss(rss, n, p+1),
+        "RMSE": np.sqrt(mean_squared_error(y, pred)),
+        "R²": r2,
+        "R²aj": 1 - (1 - r2) * (n - 1) / (n - p - 1),
+        "mod": m
+    }
+
+rmse = lambda a,b: np.sqrt(mean_squared_error(a,b))
+
+# -------------------------------------------------------------
+# 3 · LECTURA Y PRE‑PROCESADO
+df = pd.read_csv(DATOS)
+df["fecha"] = pd.to_datetime(df["fecha"])
+
+bandas = [c for c in df.columns if c.startswith("B")]
+df = df.loc[(df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)].copy()
+
+df["log_sol_sus"] = np.log(df["sol_sus"])
+
+# -------------------------------------------------------------
+# 3.1 · log(Bx) y potencias
+log_cols, poly_cols = [], []
+for b in bandas:
+    lb = f"log_{b}"
+    df[lb] = np.log(df[b])
+    df[f"{lb}^2"] = df[lb]**2
+    df[f"{lb}^3"] = df[lb]**3
+    log_cols.append(lb)
+    poly_cols.extend([f"{lb}^2", f"{lb}^3"])
+
+# -------------------------------------------------------------
+# 3.2 · razones generales log(Bi/Bj)
+ratio_cols = []
+for i, b1 in enumerate(bandas):
+    for b2 in bandas[i+1:]:
+        col = f"log({b1}/{b2})"
+        df[col] = df[f"log_{b1}"] - df[f"log_{b2}"]
+        ratio_cols.append(col)
+
+# -------------------------------------------------------------
+# 3.3 · cocientes y índices espectrales
+df["log_NIR_Blue"]  = df["log_B08"] - df["log_B02"]   
+df["log_Red_Green"] = df["log_B04"] - df["log_B03"]   
+cq_cols = ["log_NIR_Blue", "log_Red_Green"]
+
+eps = 1e-10
+df["NDVI"]   = (df["B08"] - df["B04"]) / (df["B08"] + df["B04"] + eps)
+df["TurbI1"] = df["B04"] / (df["B03"] + eps)
+df["RE_NDVI"]= (df["B08"] - df["B06"]) / (df["B08"] + df["B06"] + eps)
+df["NDMI"]   = (df["B08"] - df["B11"]) / (df["B08"] + df["B11"] + eps)
+df["NDWI"]   = (df["B03"] - df["B08"]) / (df["B03"] + df["B08"] + eps)
+idx_cols = ["NDVI", "TurbI1", "RE_NDVI", "NDMI", "NDWI"]
+
+# -------------------------------------------------------------
+# 3.4 · conjunto total de candidatos
+cand_cols = log_cols + poly_cols + ratio_cols + cq_cols + idx_cols
+
+display(Markdown(f"**Total variables candidatas:** {len(cand_cols)}"))
+
+X = df[cand_cols]
+y = df["log_sol_sus"]
+
+# -------------------------------------------------------------
+# 4 · HOLD‑OUT TEMPORAL
+last = df["fecha"].max()
+m_te = df["fecha"] == last
+m_tr = ~m_te
+
+X_tr, y_tr = X.loc[m_tr], y.loc[m_tr]
+X_te, y_te = X.loc[m_te], y.loc[m_te]
+groups_tr  = df.loc[m_tr, "fecha"]
+
+display(Markdown(f"**TRAIN campañas:** {groups_tr.nunique()}"))
+display(Markdown(f"**TEST campaña:** {last.date()}  ({m_te.sum()} muestras)"))
+
+# -------------------------------------------------------------
+# 5 · FORWARD‑AIC (Δ ≥ {DELTA_AIC})
+remaining, selected = cand_cols.copy(), []
+
+rss0 = np.sum((y_tr - y_tr.mean())**2)
+best_aic = aic_gauss(rss0, len(y_tr), 1)
+
+hist, step = [], 0
+while remaining:
+    scores = []
+    for col in remaining:
+        cols = selected + [col]
+        mtr = fit_metrics(X_tr[cols].values, y_tr.values)
+        scores.append((mtr["AIC"], col, mtr))
+    scores.sort()
+    new_aic, best_col, m_info = scores[0]
+
+    if best_aic - new_aic >= DELTA_AIC:
+        selected.append(best_col)
+        remaining.remove(best_col)
+        best_aic = new_aic
+        step += 1
+        hist.append({
+            "Paso": step,
+            "Variables": ", ".join(selected),
+            "AIC": best_aic,
+            "RMSE": m_info["RMSE"],
+            "R²": m_info["R²"],
+            "R²aj": m_info["R²aj"]
+        })
+    else:
+        break
+
+if not selected:
+    best_col = min(scores, key=lambda t: t[0])[1]
+    selected = [best_col]
+    hist.append({
+        "Paso": 1,
+        "Variables": best_col,
+        **{k: v for k, v in scores[0][2].items() if k != "mod"}
+    })
+
+hist_df = pd.DataFrame(hist, columns=["Paso", "Variables", "AIC", "RMSE", "R²", "R²aj"])
+
+display(
+    hist_df.style
+    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
+    .set_caption("Historial de selección")
+    .hide(axis="index")
+)
+
+display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
+
+# -------------------------------------------------------------
+# 6 · VALIDACIÓN Group‑KFold
+gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
+rm = []
+for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
+    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
+    rm.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
+
+display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rm):.3f} ± {np.std(rm):.3f}"))
+
+# -------------------------------------------------------------
+# 7 · MODELO FINAL Y MÉTRICAS
+mod = LinearRegression().fit(X_tr[selected], y_tr)
+
+pred_tr = mod.predict(X_tr[selected])
+pred_te = mod.predict(X_te[selected])
+
+metrics_df = pd.DataFrame({
+    "Métrica": ["RMSE", "R²"],
+    "Train log": [rmse(y_tr, pred_tr), r2_score(y_tr, pred_tr)],
+    "Test log": [rmse(y_te, pred_te), r2_score(y_te, pred_te)],
+    "Train orig": [rmse(np.exp(y_tr), np.exp(pred_tr)), r2_score(np.exp(y_tr), np.exp(pred_tr))],
+    "Test orig": [rmse(np.exp(y_te), np.exp(pred_te)), r2_score(np.exp(y_te), np.exp(pred_te))]
+})
+
+display(
+    metrics_df.style
+    .format({
+        "Train log": "{:.3f}", "Test log": "{:.3f}",
+        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
+    })
+    .set_caption("Métricas finales")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 8 · BOOTSTRAP AGRUPADO (IC 95%)
+rng = np.random.default_rng(RNG_SEED)
+dates = groups_tr.unique()
+coef_bs = []
+
+for _ in range(N_BOOT):
+    samp = rng.choice(dates, len(dates), replace=True)
+    idx = groups_tr.isin(samp)
+    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
+    coef_bs.append(m_bs.coef_)
+
+coef_bs = np.array(coef_bs)
+ci_lo, ci_hi = np.percentile(coef_bs, [2.5, 97.5], axis=0)
+
+bs_df = pd.DataFrame({
+    "Variable": selected,
+    "Media β": coef_bs.mean(axis=0),
+    "IC 95% inf.": ci_lo,
+    "IC 95% sup.": ci_hi
+})
+
+display(
+    bs_df.style
+    .format({
+        "Media β": "{:.4f}",
+        "IC 95% inf.": "{:.4f}",
+        "IC 95% sup.": "{:.4f}"
+    })
+    .set_caption("Bootstrap (coeficientes, 95 % CI)")
+    .hide(axis="index")
+)
+
+# -------------------------------------------------------------
+# 9 · ECUACIÓN DEL MODELO
+alpha = np.exp(mod.intercept_)
+expr_log = " + ".join([f"{c:.4f}·{v}" for c, v in zip(mod.coef_, selected)])
+expr_orig = " · ".join([f"{v}^{c:.4f}" for c, v in zip(mod.coef_, selected)])
+
+display(Markdown("Ecuación (log)"))
+display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
+
+display(Markdown("Ecuación (original)"))
+display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
+
+# -------------------------------------------------------------
+# 10 · PARIDAD TRAIN + TEST (log y mg/L) con estilo colores y leyenda
+plt.rcParams.update({
+    "axes.titlesize": 10,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7
+})
+
+TRAIN_CLR = "#9D50A6"
+TEST_CLR = "#FFA24B"
+ID_CLR = "#17A77E"
+
+fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+
+# Escala log
+ax[0].scatter(y_tr, pred_tr, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[0].scatter(y_te, pred_te, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
+ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
+ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
+ax[0].legend(fontsize=7, frameon=False)
+ax[0].grid(ls=":")
+
+# Escala original
+y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
+pred_tr_lin, pred_te_lin = np.exp(pred_tr), np.exp(pred_te)
+
+ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
+ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
+lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
+          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
+ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
+ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
+ax[1].legend(fontsize=7, frameon=False)
+ax[1].grid(ls=":")
+
+fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
+fig.tight_layout(pad=1.2)
+plt.show()
+
+plt.rcParams.update({
+    "axes.titlesize": 11,
+    "axes.labelsize": 9,
+    "xtick.labelsize": 8,
+    "ytick.labelsize": 8
+})
+
+```
