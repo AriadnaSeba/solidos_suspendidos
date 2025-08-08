@@ -2487,21 +2487,21 @@ for u in umbrales:
 
 ```{python}
 #| echo: false
-#| fig-width: 6
-#| fig-height: 3
+#| fig-width: 4.5
+#| fig-height: 2.0
 
 from modelo_tif_gkf import procesar_tif
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 1) Cargar el índice de agua con un umbral cualquiera (solo importa el índice)
+# 1) Cargar índice
 archivo = "./recortes_acolite/2025-06-09.tif"
 indice, _, _, _ = procesar_tif(archivo, umbral=0.0)
 
-# 2) Calcular histograma del índice
+# 2) Histograma
 hist, bins = np.histogram(indice.flatten(), bins=100, range=(-1, 1))
 
-# 3) Buscar mínimos locales para sugerir umbral
+# 3) Mínimos locales para sugerir un umbral
 minimos = [
     i for i in range(1, len(hist)-1)
     if hist[i] < hist[i-1] and hist[i] < hist[i+1]
@@ -2514,14 +2514,27 @@ else:
 
 print(f"Umbral sugerido: {umbral_sugerido:.3f}")
 
-# 4) Graficar histograma y marcar el umbral
-plt.plot(bins[:-1], hist)
-plt.axvline(umbral_sugerido, color="red", lw=2,
-            label=f"Umbral ≃ {umbral_sugerido:.3f}")
-plt.xlabel("Valor del índice de agua")
-plt.ylabel("Frecuencia")
-plt.title("Histograma del Índice de Agua")
-plt.legend()
+# 4) Dibujo
+fig, ax = plt.subplots(figsize=(4.5, 2.0), dpi=150)
+ax.plot(bins[:-1], hist, lw=1.2)
+
+# Guardamos la referencia de la línea del umbral
+linea_umbral = ax.axvline(umbral_sugerido, color="red", lw=1.4)
+
+# Leyenda vinculada a la línea real (color y estilo correctos)
+ax.legend([linea_umbral],
+          [f"Umbral ≃ {umbral_sugerido:.3f}"],
+          loc="upper left",
+          bbox_to_anchor=(-0.03, 1.02),
+          fontsize=8,
+          frameon=False)
+
+ax.set_xlabel("Índice", fontsize=9)
+ax.set_ylabel("Frecuencia", fontsize=9)
+ax.set_title("Histograma del Índice de Agua", fontsize=10)
+ax.tick_params(labelsize=8)
+ax.grid(ls=":", lw=0.3)
+
 plt.tight_layout()
 plt.show()
 
@@ -2640,49 +2653,6 @@ for u in umbrales:
 
 ```{python}
 #| echo: false
-#| fig-width: 6
-#| fig-height: 3
-
-from modelo_tif_vc import procesar_tif
-import numpy as np
-import matplotlib.pyplot as plt
-
-# 1) Cargar el índice de agua con un umbral cualquiera (solo importa el índice)
-archivo = "./recortes_acolite/2025-06-09.tif"
-indice, _, _, _ = procesar_tif(archivo, umbral=0.0)
-
-# 2) Calcular histograma del índice
-hist, bins = np.histogram(indice.flatten(), bins=100, range=(-1, 1))
-
-# 3) Buscar mínimos locales para sugerir umbral
-minimos = [
-    i for i in range(1, len(hist)-1)
-    if hist[i] < hist[i-1] and hist[i] < hist[i+1]
-]
-if minimos:
-    idx_min = minimos[len(minimos)//2]
-    umbral_sugerido = (bins[idx_min] + bins[idx_min+1]) / 2
-else:
-    umbral_sugerido = 0.0
-
-print(f"Umbral sugerido: {umbral_sugerido:.3f}")
-
-# 4) Graficar histograma y marcar el umbral
-plt.plot(bins[:-1], hist)
-plt.axvline(umbral_sugerido, color="red", lw=2,
-            label=f"Umbral ≃ {umbral_sugerido:.3f}")
-plt.xlabel("Valor del índice de agua")
-plt.ylabel("Frecuencia")
-plt.title("Histograma del Índice de Agua")
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-```
-
-
-```{python}
-#| echo: false
 #| fig-width: 15
 #| fig-height: 5
 
@@ -2745,7 +2715,7 @@ from IPython.display import display, Math
 # Mostrar la ecuación en LaTeX con la nueva fórmula:
 display(Math(
     r"\mathrm{sol\_sus} = 86.402 \cdot "
-    r"\left(\frac{B05}{B04}\right)^{-0.371} "
+    r"\left(\frac{B04}{B05}\right)^{-0.371} "
     r"\cdot B02^{-0.091}"
 ))
 
@@ -2797,49 +2767,6 @@ for u in umbrales:
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-```
-
-
-```{python}
-#| echo: false
-#| fig-width: 4
-#| fig-height: 2
-
-from modelo_tif_bt import procesar_tif
-import numpy as np
-import matplotlib.pyplot as plt
-
-# 1) Cargar el índice de agua con un umbral cualquiera (solo importa el índice)
-archivo = "./recortes_acolite/2025-06-09.tif"
-indice, _, _, _ = procesar_tif(archivo, umbral=0.0)
-
-# 2) Calcular histograma del índice
-hist, bins = np.histogram(indice.flatten(), bins=100, range=(-1, 1))
-
-# 3) Buscar mínimos locales para sugerir umbral
-minimos = [
-    i for i in range(1, len(hist)-1)
-    if hist[i] < hist[i-1] and hist[i] < hist[i+1]
-]
-if minimos:
-    idx_min = minimos[len(minimos)//2]
-    umbral_sugerido = (bins[idx_min] + bins[idx_min+1]) / 2
-else:
-    umbral_sugerido = 0.0
-
-print(f"Umbral sugerido: {umbral_sugerido:.3f}")
-
-# 4) Graficar histograma y marcar el umbral
-plt.plot(bins[:-1], hist)
-plt.axvline(umbral_sugerido, color="red", lw=2,
-            label=f"Umbral ≃ {umbral_sugerido:.3f}")
-plt.xlabel("Valor del índice de agua")
-plt.ylabel("Frecuencia")
-plt.title("Histograma del Índice de Agua")
-plt.legend()
-plt.tight_layout()
-plt.show()
-
 ```
 
 

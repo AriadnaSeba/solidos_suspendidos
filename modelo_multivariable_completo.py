@@ -118,23 +118,37 @@ class ModeloMultivariableCompleto:
         pipe = Pipeline([("s", StandardScaler()), ("m", LinearRegression())]).fit(Xtr, ytr)
         ytr_p, yte_p = pipe.predict(Xtr), pipe.predict(Xte)
 
-        # 3) Construcción de ecuaciones LaTeX
+        # 3) Construcción de ecuaciones LaTeX (formato mejorado para razones y potencias)
         a = pipe.named_steps["m"].intercept_
         coefs = pipe.named_steps["m"].coef_
-        bandas = [label(f).replace("log(", "").replace(")", "") for f in self.mejor_comb]
 
-        # Escala logarítmica
-        parts_log = []
-        for c, b in zip(coefs, bandas):
-            sign = "+" if c >= 0 else "−"
-            parts_log.append(f" {sign} {abs(c):.3f}\\,\\log({b})")
+        # Construimos las partes en LaTeX:
+        parts_log = []   # para la ecuación en escala log (usa \log(\frac{...}{...}) para razones)
+        parts_orig = []  # para la ecuación en escala original (usa paréntesis si es razón)
+
+        for c, feat in zip(coefs, self.mejor_comb):
+            # si es ratio logarítmico: log_ratio_B1_B2
+            if feat.startswith("log_ratio_"):
+                p1, p2 = feat.replace("log_ratio_", "").split("_")
+                sign = "+" if c >= 0 else "−"
+                # en la ecuación log: coef * log(fracción apilada)
+                parts_log.append(f" {sign} {abs(c):.3f}\\,\\log\\left(\\frac{{{p1}}}{{{p2}}}\\right)")
+                # en la ecuación original: (B1/B2)^{coef} con la fracción apilada dentro de paréntesis
+                parts_orig.append(f"\\left(\\frac{{{p1}}}{{{p2}}}\\right)^{{{c:.3f}}}")
+            else:
+                # caso log_Band
+                b = feat.replace("log_", "")
+                sign = "+" if c >= 0 else "−"
+                parts_log.append(f" {sign} {abs(c):.3f}\\,\\log({b})")
+                # en la original: B^{coef}
+                parts_orig.append(f"{b}^{{{c:.3f}}}")
+
+        # Ensamblamos las ecuaciones (limpiando el posible '+' inicial)
         eq_log = "".join(parts_log).lstrip(" +")
         display(Markdown("**Ecuación en escala logarítmica:**"))
         display(Math(rf"\log(sol\_sus) = {a:.3f}{eq_log}"))
 
-        # Escala original
         alpha = np.exp(a)
-        parts_orig = [f"{b}^{{{c:.3f}}}" for c, b in zip(coefs, bandas)]
         eq_orig = " \\times ".join(parts_orig)
         display(Markdown("**Ecuación en escala original:**"))
         display(Math(rf"sol\_sus = {alpha:.3f} \times {eq_orig}"))
@@ -169,7 +183,7 @@ class ModeloMultivariableCompleto:
             "Test 2.5%": [f"{mb_te[k][1]:.3f}" for k in mb_te],
             "Test 97.5%": [f"{mb_te[k][2]:.3f}" for k in mb_te],
         })
-        display(self._style_table(df_ic, "Intervalos de Confianza 95 % (Bootstrap)"))
+        display(self._style_table(df_ic, "Intervalos de Confianza 95 % (Bootstrap)"))
 
         # 6) Gráficos con ecuaciones y métricas
         plt.rcParams.update({
