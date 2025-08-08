@@ -29,8 +29,6 @@ keywords:
   - Quarto
   - Sólidos Suspendidos 
 jupyter: python3
-execute:
-  echo: true
 ---
 
 ## Sólidos suspendidos totales<span style="font-weight:normal; font-size: 1rem">, por Vera Geneyer (https://github.com/VeraGeneyer)</span> {toc-text="Sólidos suspendidos totales"}
@@ -941,9 +939,9 @@ for b in bandas:
 
     resultados.append({
         "Banda"    : b,
-        "R²_log"   : r2_log,
-        "R²aj_log" : r2a_log,
-        "RMSE_log" : rmse_log,
+        "R²"   : r2_log,
+        "R²aj" : r2a_log,
+        "RMSE" : rmse_log,
         "AIC"      : aic_val
     })
 
@@ -2370,908 +2368,532 @@ plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
 
 ```
 
-::: {.callout-note title="Conclusión del modelo seleccionado"}
-
-Este modelo combina la razón espectral **log(B02/B07)** con una transformación cúbica de la banda **B8A**, logrando el mejor desempeño hasta ahora: `R² = 0.688` en la campaña de prueba, mucho mayor que en modelos anteriores (~0.2 o menos). También mejora el ajuste (`R² = 0.812` en entrenamiento) sin perder generalización (`RMSE_CV = 0.123 ± 0.034`).
-
-El término dominante sigue siendo **log(B02/B07)**, que ya aparecía en modelos previos y mantiene un efecto negativo claro. Esto indica que **una mayor reflectancia relativa en B02 frente a B07 se asocia a menos sólidos suspendidos**, lo que tiene sentido: B02 (azul) penetra más el agua, y si hay más sólidos en suspensión, se dispersa o absorbe más rápido que B07 (NIR).
-
-El aporte de **log_B8A³** es marginal: su coeficiente es pequeño y no significativo (el IC incluye cero), pero su inclusión mejoró el AIC ≥ 4, lo que sugiere que ayuda a capturar alguna curvatura en los datos.
-
-:::
 
 
-#### Evaluación del aporte marginal de `log_B8A³`
-
-Para verificar si la variable **log_B8A³** mejora efectivamente la predicción, ajusto un modelo más simple utilizando solo `log(B02/B07)` y comparo su desempeño sobre la campaña de prueba. Esta comparación permite confirmar si el descenso en AIC justifica una mejora real o si el nuevo término solo ajusta mejor los datos de entrenamiento.
-
+### Selección de variables mediante Forward Selection con AIC usando validación cruzada
 
 ```{python}
-#|code-fold: true
-selected_simple = ['log(B02/B07)']
+#| echo: false
+from modelo_multivariable_completo import ModeloMultivariableCompleto
+import pandas as pd
 
-# Entrena modelo simple
-mod_simple = LinearRegression().fit(X_tr[selected_simple], y_tr)
-pred_te_simple = mod_simple.predict(X_te[selected_simple])
-rmse_te_simple = rmse(y_te, pred_te_simple)
-r2_te_simple = r2_score(y_te, pred_te_simple)
+# Cargar datos
+datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
 
-print(f"Modelo simple TEST log RMSE = {rmse_te_simple:.3f} | R² = {r2_te_simple:.3f}")
+# Inicializar el modelo con los datos
+modelo = ModeloMultivariableCompleto(datos)
+
+# 1) Selección hacia adelante con validación cruzada
+modelo.forward_selection()
+
+# 2) Ajuste del modelo final con la mejor combinación
+modelo.modelo_final = modelo.ajustar_modelo_final()  # guardar el modelo ajustado
+
+# 3) Mostrar métricas, ecuaciones y gráficos
+modelo.mostrar_resultados()
 
 ```
 
 
-::: {.callout-note title="Conclusión sobre el aporte de `log_B8A³`"}
 
-Al comparar el modelo completo con otro más simple que usa solo `log(B02/B07)`, se observa una mejora notable en el desempeño sobre la campaña de prueba: el `RMSE` disminuye de 0.391 a 0.244 y el `R²` se incrementa de 0.20 a 0.69. Esto sugiere que `log_B8A³` contribuye a mejorar la capacidad predictiva del modelo.
-
-Sin embargo, el coeficiente estimado para `log_B8A³` es pequeño, y su intervalo de confianza incluye el cero, lo que indica **incertidumbre sobre su efecto real**. Por lo tanto, aunque su inclusión mejora el ajuste y la predicción, el aporte es **marginal y debe interpretarse con cautela**.
-
-:::
-
-
-
-
-
-### Razones espectrales informadas (NIR/Blue, Red/Green, NDWI) para mejorar el modelo
-
-En esta sección incorporo **razones espectrales con base teórica o empírica** utilizadas comúnmente en teledetección para el análisis de calidad del agua. Estas incluyen cocientes como `NIR/Blue`, `Red/Green`, y el índice `NDWI`, que podrían capturar características ópticas relevantes no reflejadas por combinaciones arbitrarias de bandas.
-
-Estas nuevas variables se añaden a las transformaciones ya consideradas (logaritmos, potencias y razones logarítmicas) y se someten al mismo procedimiento de selección automática (`Forward AIC`) con un umbral de mejora ΔAIC ≥ 4. El objetivo es evaluar si estas razones “informadas” permiten mejorar el ajuste del modelo sin sacrificar interpretabilidad ni aumentar en exceso su complejidad.
-
-El enfoque conserva la validación cruzada temporal (`GroupKFold`) y el análisis de incertidumbre mediante bootstrap, para mantener la robustez en la comparación con resultados anteriores.
+### Selección de variables mediante Forward Selection con AIC usando bootstrap
 
 ```{python}
-#|code-fold: true
-# -------------------------------------------------------------
-# 0 · LIBRERÍAS
-import numpy as np
+#| echo: false
+from modelo_multivariable_boot import ModeloMultivariableCompleto
 import pandas as pd
-from pathlib import Path
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import GroupKFold
-from sklearn.metrics import mean_squared_error, r2_score
+
+# 1) Cargar datos
+datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
+
+# 2) Inicializar el modelo con los datos (aquí n_boot=300)
+modelo = ModeloMultivariableCompleto(datos, max_features=3, n_boot=200)
+
+# 3) Selección hacia adelante usando bootstrap y AIC
+modelo.forward_selection()
+
+# 4) Ajuste del modelo final con la mejor combinación seleccionada
+modelo.modelo_final = modelo.ajustar_modelo_final()
+
+# 5) Mostrar tablas, ecuaciones, métricas, intervalos de confianza y gráficos
+modelo.mostrar_resultados()
+```
+
+
+
+### Procesamiento de datos geográficos
+
+#### Modelo gkf
+
+
+```{python}
+#| echo: false
+#| fig-width: 15
+#| fig-height: 5
+
+from modelo_tif_gkf import procesar_tif  
 import matplotlib.pyplot as plt
-from IPython.display import display, Markdown
+import numpy as np
+from IPython.display import display, Math
 
-# -------------------------------------------------------------
-# 1 · CONFIGURACIÓN
-DATOS      = Path("datos/datos_sol_sus_acolite.csv")
-DELTA_AIC  = 2.0            # ∆AIC mínimo
-N_BOOT     = 2000
-RNG_SEED   = 42
+# Mostrar la ecuación en LaTeX
+display(Math(r"\text{sol\_sus} = 61.7089 \cdot \left(\frac{B02}{B07}\right)^{-0.8370} \cdot \left(B8A^3\right)^{-0.0044}"))
 
-# -------------------------------------------------------------
-# 2 · FUNCIONES AUXILIARES
-def aic_gauss(rss, n, k):
-    return n * np.log(rss / n) + 2 * k
+archivo = "./recortes_acolite/2025-06-09.tif"
+umbrales = [0]  # Se puede agregar más valores 
 
-def fit_metrics(X, y):
-    m    = LinearRegression().fit(X, y)
-    pred = m.predict(X)
-    rss  = np.sum((y - pred) ** 2)
-    n, p = X.shape
-    r2   = r2_score(y, pred)
-    return {
-        "AIC" : aic_gauss(rss, n, p + 1),
-        "RMSE": np.sqrt(mean_squared_error(y, pred)),
-        "R²"  : r2,
-        "R²aj": 1 - (1 - r2) * (n - 1) / (n - p - 1),
-        "mod" : m
-    }
+for u in umbrales:
+    indice, mascara, parametro, perfil = procesar_tif(archivo, umbral=u)
 
-rmse = lambda a, b: np.sqrt(mean_squared_error(a, b))
+    print(f"\n--- Umbral: {u} ---")
+    print("Estadísticas del índice de agua:")
+    print(f"  Min: {np.nanmin(indice):.4f}, Max: {np.nanmax(indice):.4f}, Media: {np.nanmean(indice):.4f}")
 
-# -------------------------------------------------------------
-# 3 · CARGA Y PREPARACIÓN
-df = pd.read_csv(DATOS)
-df["fecha"] = pd.to_datetime(df["fecha"])
+    print("Estadísticas de la máscara de agua:")
+    print(f"  Valores únicos: {np.unique(mascara)}  (1=agua, 0=tierra, 255=nodata)")
 
-bandas = [c for c in df.columns if c.startswith("B")]
-df = df.loc[(df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)].copy()
+    print("Estadísticas del parámetro sólidos suspendidos:")
+    # Excluir valores nodata = -9999.0
+    validos = parametro != -9999.0
+    print(f"  Min: {np.nanmin(parametro[validos]):.4f}, Max: {np.nanmax(parametro[validos]):.4f}, Media: {np.nanmean(parametro[validos]):.4f}")
 
-df["log_sol_sus"] = np.log(df["sol_sus"])
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(f"Resultados para umbral = {u}", fontsize=16)
 
-# 3.1 · log‑bandas individuales
-log_bands = []
-for b in bandas:
-    col = f"log_{b}"
-    df[col] = np.log(df[b])
-    log_bands.append(col)
+    # Índice de Agua
+    im0 = axs[0].imshow(indice, cmap='coolwarm', vmin=-1, vmax=1)
+    axs[0].set_title("Índice de Agua")
+    fig.colorbar(im0, ax=axs[0], fraction=0.046, pad=0.04)
+    axs[0].axis('off')
 
-# 3.2 · cocientes informados + NDWI
-req = {"B02","B03","B04","B08"}
-if not req.issubset(df.columns):
-    raise ValueError(f"Faltan bandas necesarias: {req - set(df.columns)}")
+    # Máscara de Agua: visualizar como binaria 0–1
+    mask_vis = np.where(mascara == 1, 1, 0)  
+    im1 = axs[1].imshow(mask_vis, cmap='gray', vmin=0, vmax=1)
+    axs[1].set_title("Máscara de Agua")
+    fig.colorbar(im1, ax=axs[1], fraction=0.046, pad=0.04)
+    axs[1].axis('off')
 
-df["NIR_Blue"]  = df["B08"] / df["B02"]
-df["Red_Green"] = df["B04"] / df["B03"]
-df["NDWI"]      = (df["B03"] - df["B08"]) / (df["B03"] + df["B08"])
-indices = ["NIR_Blue", "Red_Green", "NDWI"]
+    # Sólidos Suspendidos
+    vmax_sol = np.nanpercentile(parametro[validos], 98)  # Excluye nodata
+    im2 = axs[2].imshow(parametro, cmap='inferno', vmin=0, vmax=vmax_sol)
+    axs[2].set_title("Sólidos Suspendidos Estimados")
+    fig.colorbar(im2, ax=axs[2], fraction=0.046, pad=0.04)
+    axs[2].axis('off')
 
-# -------------------------------------------------------------
-# 4 · MATRICES DE MODELADO
-vars_candidatas = log_bands + indices
-display(Markdown(f"**Total de variables candidatas:** {len(vars_candidatas)}"))
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+```
 
-X = df[vars_candidatas]
-y = df["log_sol_sus"]
 
-# -------------------------------------------------------------
-# 5 · HOLD‑OUT TEMPORAL
-last_date = df["fecha"].max()
-mask_te   = df["fecha"] == last_date
-mask_tr   = ~mask_te
+```{python}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3
 
-X_tr, y_tr = X.loc[mask_tr], y.loc[mask_tr]
-X_te, y_te = X.loc[mask_te], y.loc[mask_te]
-groups_tr  = df.loc[mask_tr, "fecha"]
+from modelo_tif_gkf import procesar_tif
+import numpy as np
+import matplotlib.pyplot as plt
 
-display(Markdown(f"**TRAIN campañas:** {groups_tr.nunique()}"))
-display(Markdown(f"**TEST campaña:** {last_date.date()}  ({mask_te.sum()} muestras)"))
+# 1) Cargar el índice de agua con un umbral cualquiera (solo importa el índice)
+archivo = "./recortes_acolite/2025-06-09.tif"
+indice, _, _, _ = procesar_tif(archivo, umbral=0.0)
 
-# -------------------------------------------------------------
-# 6 · FORWARD SELECTION (∆AIC ≥ {DELTA_AIC})
-remaining = vars_candidatas.copy()
-selected  = []
+# 2) Calcular histograma del índice
+hist, bins = np.histogram(indice.flatten(), bins=100, range=(-1, 1))
 
-rss_null = np.sum((y_tr - y_tr.mean()) ** 2)
-best_aic = aic_gauss(rss_null, len(y_tr), k=1)
+# 3) Buscar mínimos locales para sugerir umbral
+minimos = [
+    i for i in range(1, len(hist)-1)
+    if hist[i] < hist[i-1] and hist[i] < hist[i+1]
+]
+if minimos:
+    idx_min = minimos[len(minimos)//2]
+    umbral_sugerido = (bins[idx_min] + bins[idx_min+1]) / 2
+else:
+    umbral_sugerido = 0.0
 
-hist, step = [], 0
-while remaining:
-    scores = []
-    for var in remaining:
-        cols = selected + [var]
-        met  = fit_metrics(X_tr[cols].values, y_tr.values)
-        scores.append((met["AIC"], var, met))
-    scores.sort()
-    new_aic, best_var, best_met = scores[0]
+print(f"Umbral sugerido: {umbral_sugerido:.3f}")
 
-    if best_aic - new_aic >= DELTA_AIC:
-        selected.append(best_var)
-        remaining.remove(best_var)
-        best_aic = new_aic
-        step += 1
-        hist.append({
-            "Paso": step,
-            "Variables": ", ".join(selected),
-            "AIC": best_aic,
-            "RMSE": best_met["RMSE"],
-            "R²": best_met["R²"],
-            "R²aj": best_met["R²aj"]
-        })
-    else:
-        break
-
-if not selected:
-    best_var = min(scores, key=lambda t: t[0])[1]
-    selected = [best_var]
-    best_aic = min(scores)[0]
-    best_met = min(scores)[2]
-    hist.append({
-        "Paso": 1,
-        "Variables": best_var,
-        **{k: best_met[k] for k in ("AIC","RMSE","R²","R²aj")}
-    })
-
-hist_df = pd.DataFrame(hist, columns=["Paso","Variables","AIC","RMSE","R²","R²aj"])
-display(
-    hist_df.style
-    .format({"AIC":"{:.3f}","RMSE":"{:.3f}","R²":"{:.3f}","R²aj":"{:.3f}"})
-    .set_caption("Historial de selección")
-    .hide(axis="index")
-)
-
-display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
-
-# -------------------------------------------------------------
-# 7 · VALIDACIÓN Group‑KFold
-gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
-rm_cv = []
-for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
-    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
-    rm_cv.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
-
-display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rm_cv):.3f} ± {np.std(rm_cv):.3f}"))
-
-# -------------------------------------------------------------
-# 8 · MODELO FINAL Y MÉTRICAS
-mod = LinearRegression().fit(X_tr[selected], y_tr)
-
-pred_tr_log = mod.predict(X_tr[selected])
-pred_te_log = mod.predict(X_te[selected])
-
-metrics_df = pd.DataFrame({
-    "Métrica": ["RMSE", "R²"],
-    "Train log": [rmse(y_tr, pred_tr_log), r2_score(y_tr, pred_tr_log)],
-    "Test log": [rmse(y_te, pred_te_log), r2_score(y_te, pred_te_log)],
-    "Train orig": [rmse(np.exp(y_tr), np.exp(pred_tr_log)), r2_score(np.exp(y_tr), np.exp(pred_tr_log))],
-    "Test orig": [rmse(np.exp(y_te), np.exp(pred_te_log)), r2_score(np.exp(y_te), np.exp(pred_te_log))]
-})
-
-display(
-    metrics_df.style
-    .format({
-        "Train log": "{:.3f}", "Test log": "{:.3f}",
-        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
-    })
-    .set_caption("Métricas finales")
-    .hide(axis="index")
-)
-
-# -------------------------------------------------------------
-# 9 · BOOTSTRAP AGRUPADO (IC 95 %)
-rng   = np.random.default_rng(RNG_SEED)
-dates = groups_tr.unique()
-coef_bs=[]
-for _ in range(N_BOOT):
-    samp = rng.choice(dates, len(dates), replace=True)
-    idx  = groups_tr.isin(samp)
-    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
-    coef_bs.append(m_bs.coef_)
-
-coef_bs = np.asarray(coef_bs)
-ci_lo, ci_hi = np.percentile(coef_bs, [2.5, 97.5], axis=0)
-
-bs_df = pd.DataFrame({
-    "Variable"    : selected,
-    "Media β"     : coef_bs.mean(axis=0),
-    "IC 95% inf." : ci_lo,
-    "IC 95% sup." : ci_hi
-})
-
-display(
-    bs_df.style
-    .format({"Media β":"{:.4f}","IC 95% inf.":"{:.4f}","IC 95% sup.":"{:.4f}"})
-    .set_caption("Bootstrap (coeficientes, 95 % CI)")
-    .hide(axis="index")
-)
-
-# -------------------------------------------------------------
-# 10 · ECUACIONES
-alpha     = np.exp(mod.intercept_)
-expr_log  = " + ".join([f"{c:.4f}·{v}" for c, v in zip(mod.coef_, selected)])
-expr_orig = " · ".join([f"{v}^{c:.4f}" for c, v in zip(mod.coef_, selected)])
-
-display(Markdown("Ecuación (log)"))
-display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
-
-display(Markdown("Ecuación (original)"))
-display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
-
-# -------------------------------------------------------------
-# 11 · GRÁFICAS DE PARIDAD (TRAIN + TEST) con estilo uniforme
-plt.rcParams.update({
-    "axes.titlesize":10, "axes.labelsize":8,
-    "xtick.labelsize":7,"ytick.labelsize":7
-})
-
-TRAIN_CLR = "#9D50A6"
-TEST_CLR  = "#FFA24B"
-ID_CLR    = "#17A77E"
-
-fig, ax = plt.subplots(1,2, figsize=(9,4))
-
-# --- Escala log
-ax[0].scatter(y_tr, pred_tr_log, alpha=.6, color=TRAIN_CLR, edgecolor='k', label="Train (●)")
-ax[0].scatter(y_te, pred_te_log, alpha=.6, color=TEST_CLR, marker='s', edgecolor='k', label="Test  (■)")
-lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
-ax[0].plot(lims, lims, '--', color=ID_CLR, lw=2.5, label="y = x")
-ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
-ax[0].legend(fontsize=7, frameon=False)
-ax[0].grid(ls=":")
-
-# --- Escala original
-y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
-pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
-ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=.6, color=TRAIN_CLR, edgecolor='k', label="Train (●)")
-ax[1].scatter(y_te_lin, pred_te_lin, alpha=.6, color=TEST_CLR, marker='s', edgecolor='k', label="Test  (■)")
-lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
-          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
-ax[1].plot(lims_o, lims_o, '--', color=ID_CLR, lw=2.5)
-ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
-ax[1].legend(fontsize=7, frameon=False)
-ax[1].grid(ls=":")
-
-fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
-fig.tight_layout(pad=1.2)
+# 4) Graficar histograma y marcar el umbral
+plt.plot(bins[:-1], hist)
+plt.axvline(umbral_sugerido, color="red", lw=2,
+            label=f"Umbral ≃ {umbral_sugerido:.3f}")
+plt.xlabel("Valor del índice de agua")
+plt.ylabel("Frecuencia")
+plt.title("Histograma del Índice de Agua")
+plt.legend()
+plt.tight_layout()
 plt.show()
 
-# restaurar tamaño por defecto
-plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
-                     "xtick.labelsize":8,"ytick.labelsize":8})
-
 ```
-
-::: {.callout-note title="Conclusión del modelo seleccionado"}
-
-La inclusión de razones espectrales informadas, como `NIR_Blue`, permitió ajustar un modelo con buen desempeño en el conjunto de entrenamiento (R² = 0.80) y una estructura simple de solo dos variables. Sin embargo, al evaluarlo sobre una campaña futura, el modelo mostró una caída significativa de desempeño (R² = 0.02 en escala original), similar a modelos anteriores más simples.
-
-El cociente `NIR_Blue` resultó la variable más informativa, con un coeficiente robusto y un intervalo de confianza estrecho. En contraste, la contribución de `log_B11` fue poco significativa, con un intervalo de coeficiente que incluye el cero, lo cual indica alta incertidumbre en su efecto.
-
-Si bien estas razones espectrales permiten interpretar el modelo desde una base física, **no mejoran la capacidad de generalización** respecto a modelos más simples basados en razones logarítmicas. Esto sugiere que el modelo está alcanzando un límite explicativo con las bandas actuales, y que para mejorar la predicción sobre nuevas campañas podría ser necesario incorporar variables adicionales o utilizar modelos más flexibles.
-
-:::
-
-
-
-
-
-### Selección automática con AIC a partir de índices espectrales clásicos (NDVI, TurbI1, RE_NDVI y NDMI)
-
 
 
 ```{python}
-#|code-fold: true
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import GroupKFold
-from sklearn.metrics import mean_squared_error, r2_score
+#| echo: false
+#| fig-width: 15
+#| fig-height: 5
+
+from modelo_tif_gkf import procesar_tif
 import matplotlib.pyplot as plt
-from IPython.display import display, Markdown
+import numpy as np
 
-# -------------------------------------------------------------
-# 1 · CONFIGURACIÓN
-DATOS      = Path("datos/datos_sol_sus_acolite.csv")   # ← ajusta si hace falta
-DELTA_AIC  = 2.0                                       # ∆AIC mínimo entre pasos
-N_BOOT     = 2000                                      # réplicas bootstrap agrupado
-RNG_SEED   = 42
+archivo = "./recortes_acolite/2025-06-09.tif"
+umbrales = [0.25, 0.33, 0.35, 0.40]  # se puede agregar más
 
-# -------------------------------------------------------------
-# 2 · FUNCIONES AUXILIARES
-def aic_gauss(rss: float, n: int, k: int) -> float:
-    return n * np.log(rss / n) + 2 * k
+for u in umbrales:
+    # Procesar con el umbral actual
+    indice, mascara, parametro, perfil = procesar_tif(archivo, umbral=u)
 
-def fit_metrics(X: np.ndarray, y: np.ndarray):
-    m = LinearRegression().fit(X, y)
-    pred = m.predict(X)
-    rss = np.sum((y - pred) ** 2)
-    n, p = X.shape
-    r2 = r2_score(y, pred)
-    return {
-        "AIC": aic_gauss(rss, n, p + 1),
-        "RMSE": np.sqrt(mean_squared_error(y, pred)),
-        "R²": r2,
-        "R²aj": 1 - (1 - r2) * (n - 1) / (n - p - 1),
-        "mod": m
-    }
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(f"Resultados para umbral = {u}", fontsize=16)
 
-rmse = lambda a, b: np.sqrt(mean_squared_error(a, b))
+    # 1) Índice de Agua
+    im0 = axs[0].imshow(indice, cmap='coolwarm', vmin=-1, vmax=1)
+    axs[0].set_title("Índice de Agua")
+    fig.colorbar(im0, ax=axs[0], fraction=0.046, pad=0.04)
+    axs[0].axis('off')
 
-# -------------------------------------------------------------
-# 3 · CARGA Y PREPARACIÓN
-df = pd.read_csv(DATOS)
-df["fecha"] = pd.to_datetime(df["fecha"])
+    # 2) Máscara de Agua  
+    # Convertimos 255 → 0 para visualizar sólo binario
+    mask_vis = np.where(mascara == 1, 1, 0)
+    im1 = axs[1].imshow(mask_vis, cmap='gray', vmin=0, vmax=1)
+    axs[1].set_title("Máscara de Agua")
+    fig.colorbar(im1, ax=axs[1], fraction=0.046, pad=0.04)
+    axs[1].axis('off')
 
-bandas = [c for c in df.columns if c.startswith("B")]
-mask = (df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)
-df = df.loc[mask].copy()
+    # 3) Sólidos Suspendidos Estimados  
+    # Excluir nodata = -9999.0 antes de calcular el 98º percentil
+    valid = parametro != -9999.0
+    vmax_sol = np.nanpercentile(parametro[valid], 98)
+    im2 = axs[2].imshow(parametro, cmap='inferno', vmin=0, vmax=vmax_sol)
+    axs[2].set_title("Sólidos Suspendidos Estimados")
+    fig.colorbar(im2, ax=axs[2], fraction=0.046, pad=0.04)
+    axs[2].axis('off')
 
-df["log_sol_sus"] = np.log(df["sol_sus"])
-
-log_bands = []
-for b in bandas:
-    col = f"log_{b}"
-    df[col] = np.log(df[b])
-    log_bands.append(col)
-
-req = {"B03","B04","B05","B08","B11"}
-faltan = req - set(df.columns)
-if faltan:
-    raise ValueError(f"Faltan bandas necesarias: {faltan}")
-
-df["NDVI"]    = (df["B08"] - df["B04"]) / (df["B08"] + df["B04"])
-df["TurbI1"]  = df["B03"] / df["B04"]
-df["RE_NDVI"] = (df["B08"] - df["B05"]) / (df["B08"] + df["B05"])
-df["NDMI"]    = (df["B08"] - df["B11"]) / (df["B08"] + df["B11"])
-
-indices = ["NDVI", "TurbI1", "RE_NDVI", "NDMI"]
-
-vars_candidatas = log_bands + indices
-display(Markdown(f"**Total de variables candidatas:** {len(vars_candidatas)}"))
-
-X = df[vars_candidatas]
-y = df["log_sol_sus"]
-
-# -------------------------------------------------------------
-# 4 · HOLD‑OUT TEMPORAL
-last_date = df["fecha"].max()
-mask_te = df["fecha"] == last_date
-mask_tr = ~mask_te
-
-X_tr, y_tr = X.loc[mask_tr], y.loc[mask_tr]
-X_te, y_te = X.loc[mask_te], y.loc[mask_te]
-groups_tr = df.loc[mask_tr, "fecha"]
-
-display(Markdown(f"**TRAIN campañas:** {groups_tr.nunique()}"))
-display(Markdown(f"**TEST campaña:** {last_date.date()}  ({mask_te.sum()} muestras)"))
-
-# -------------------------------------------------------------
-# 5 · FORWARD SELECTION guiado por AIC
-remaining = vars_candidatas.copy()
-selected = []
-
-rss_null = np.sum((y_tr - y_tr.mean()) ** 2)
-best_aic = aic_gauss(rss_null, len(y_tr), k=1)
-
-hist = []
-step = 0
-
-while remaining:
-    candidatos = []
-    for v in remaining:
-        cols = selected + [v]
-        met = fit_metrics(X_tr[cols].values, y_tr.values)
-        candidatos.append((met["AIC"], v, met))
-    candidatos.sort(key=lambda t: t[0])
-
-    new_aic, best_var, best_met = candidatos[0]
-    if best_aic - new_aic >= DELTA_AIC:
-        selected.append(best_var)
-        remaining.remove(best_var)
-        best_aic = new_aic
-        step += 1
-        hist.append({
-            "Paso": step,
-            "Variables": ", ".join(selected),
-            "AIC": best_aic,
-            "RMSE": best_met["RMSE"],
-            "R²": best_met["R²"],
-            "R²aj": best_met["R²aj"]
-        })
-    else:
-        break
-
-if not selected:
-    best_aic, best_var, best_met = min(candidatos, key=lambda t: t[0])
-    selected = [best_var]
-    hist = [{
-        "Paso": 1,
-        "Variables": best_var,
-        "AIC": best_aic,
-        **{k: best_met[k] for k in ("RMSE", "R²", "R²aj")}
-    }]
-
-hist_df = pd.DataFrame(hist, columns=["Paso", "Variables", "AIC", "RMSE", "R²", "R²aj"])
-
-display(
-    hist_df.style
-    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
-    .set_caption("Historial de selección")
-    .hide(axis="index")
-)
-
-display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
-
-# -------------------------------------------------------------
-# 6 · VALIDACIÓN GROUP‑KFOLD
-gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
-rmse_cv = []
-for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
-    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
-    rmse_cv.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
-
-display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rmse_cv):.3f} ± {np.std(rmse_cv):.3f}"))
-
-# -------------------------------------------------------------
-# 7 · MODELO FINAL Y MÉTRICAS
-mod = LinearRegression().fit(X_tr[selected], y_tr)
-
-pred_tr_log = mod.predict(X_tr[selected])
-pred_te_log = mod.predict(X_te[selected])
-
-metrics_df = pd.DataFrame({
-    "Métrica": ["RMSE", "R²"],
-    "Train log": [rmse(y_tr, pred_tr_log), r2_score(y_tr, pred_tr_log)],
-    "Test log": [rmse(y_te, pred_te_log), r2_score(y_te, pred_te_log)],
-    "Train orig": [rmse(np.exp(y_tr), np.exp(pred_tr_log)), r2_score(np.exp(y_tr), np.exp(pred_tr_log))],
-    "Test orig": [rmse(np.exp(y_te), np.exp(pred_te_log)), r2_score(np.exp(y_te), np.exp(pred_te_log))]
-})
-
-display(
-    metrics_df.style
-    .format({
-        "Train log": "{:.3f}", "Test log": "{:.3f}",
-        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
-    })
-    .set_caption("Métricas finales")
-    .hide(axis="index")
-)
-
-# -------------------------------------------------------------
-# 8 · BOOTSTRAP AGRUPADO (IC 95 %)
-rng = np.random.default_rng(RNG_SEED)
-dates = groups_tr.unique()
-coef_bs = []
-
-for _ in range(N_BOOT):
-    samp = rng.choice(dates, len(dates), replace=True)
-    idx = groups_tr.isin(samp)
-    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
-    coef_bs.append(m_bs.coef_)
-
-coef_bs = np.array(coef_bs)
-mean_bs = coef_bs.mean(axis=0)
-ci_bs = np.percentile(coef_bs, [2.5, 97.5], axis=0)
-
-bs_df = pd.DataFrame({
-    "Variable": selected,
-    "Media β": mean_bs,
-    "IC 95% inf.": ci_bs[0],
-    "IC 95% sup.": ci_bs[1]
-})
-
-display(
-    bs_df.style
-    .format({
-        "Media β": "{:.4f}",
-        "IC 95% inf.": "{:.4f}",
-        "IC 95% sup.": "{:.4f}"
-    })
-    .set_caption("Bootstrap (coeficientes, 95 % CI)")
-    .hide(axis="index")
-)
-
-# -------------------------------------------------------------
-# 9 · ECUACIONES
-alpha = np.exp(mod.intercept_)
-expr_log = " + ".join([f"{c:.4f}·{v}" for c, v in zip(mod.coef_, selected)])
-expr_orig = " · ".join([f"{v}^{c:.4f}" for c, v in zip(mod.coef_, selected)])
-
-display(Markdown("Ecuación (log)"))
-display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
-
-display(Markdown("Ecuación (original)"))
-display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
-
-# -------------------------------------------------------------
-# 10 · GRÁFICAS DE PARIDAD (TRAIN + TEST) con estilo de colores y leyenda
-
-plt.rcParams.update({
-    "axes.titlesize": 10,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7
-})
-
-TRAIN_CLR = "#9D50A6"
-TEST_CLR = "#FFA24B"
-ID_CLR = "#17A77E"
-
-fig, ax = plt.subplots(1, 2, figsize=(9, 4))
-
-# Escala log
-ax[0].scatter(y_tr, pred_tr_log, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
-ax[0].scatter(y_te, pred_te_log, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
-lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
-ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
-ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
-ax[0].legend(fontsize=7, frameon=False)
-ax[0].grid(ls=":")
-
-# Escala original
-y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
-pred_tr_lin, pred_te_lin = np.exp(pred_tr_log), np.exp(pred_te_log)
-
-ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
-ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
-lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
-          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
-ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
-ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
-ax[1].legend(fontsize=7, frameon=False)
-ax[1].grid(ls=":")
-
-fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
-fig.tight_layout(pad=1.2)
-plt.show()
-
-# Restaurar configuración original para otras gráficas
-plt.rcParams.update({
-    "axes.titlesize": 11,
-    "axes.labelsize": 9,
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8
-})
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
 
 ```
 
 
 
+#### Modelo vc
 
+```{python}
+#| echo: false
+#| fig-width: 15
+#| fig-height: 5
 
-### todo junto
+from modelo_tif_vc import procesar_tif  
+import matplotlib.pyplot as plt
+import numpy as np
+from IPython.display import display, Math
 
+# Mostrar la ecuación en LaTeX 
+display(Math(r"\mathrm{sol\_sus} = 86.402 \cdot \left(\tfrac{B04}{B05}\right)^{-0.424} \cdot B04^{-0.116}"))
+
+archivo = "./recortes_acolite/2025-06-09.tif"
+umbrales = [0]  # Se puede agregar más valores 
+
+for u in umbrales:
+    indice, mascara, parametro, perfil = procesar_tif(archivo, umbral=u)
+
+    print(f"\n--- Umbral: {u} ---")
+    print("Estadísticas del índice de agua:")
+    print(f"  Min: {np.nanmin(indice):.4f}, Max: {np.nanmax(indice):.4f}, Media: {np.nanmean(indice):.4f}")
+
+    print("Estadísticas de la máscara de agua:")
+    print(f"  Valores únicos: {np.unique(mascara)}  (1=agua, 0=tierra, 255=nodata)")
+
+    print("Estadísticas del parámetro sólidos suspendidos:")
+    # Excluir valores nodata = -9999.0
+    validos = parametro != -9999.0
+    print(f"  Min: {np.nanmin(parametro[validos]):.4f}, Max: {np.nanmax(parametro[validos]):.4f}, Media: {np.nanmean(parametro[validos]):.4f}")
+
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(f"Resultados para umbral = {u}", fontsize=16)
+
+    # Índice de Agua
+    im0 = axs[0].imshow(indice, cmap='coolwarm', vmin=-1, vmax=1)
+    axs[0].set_title("Índice de Agua")
+    fig.colorbar(im0, ax=axs[0], fraction=0.046, pad=0.04)
+    axs[0].axis('off')
+
+    # Máscara de Agua: visualizar como binaria 0–1
+    mask_vis = np.where(mascara == 1, 1, 0)  
+    im1 = axs[1].imshow(mask_vis, cmap='gray', vmin=0, vmax=1)
+    axs[1].set_title("Máscara de Agua")
+    fig.colorbar(im1, ax=axs[1], fraction=0.046, pad=0.04)
+    axs[1].axis('off')
+
+    # Sólidos Suspendidos
+    vmax_sol = np.nanpercentile(parametro[validos], 98)  # Excluye nodata
+    im2 = axs[2].imshow(parametro, cmap='inferno', vmin=0, vmax=vmax_sol)
+    axs[2].set_title("Sólidos Suspendidos Estimados")
+    fig.colorbar(im2, ax=axs[2], fraction=0.046, pad=0.04)
+    axs[2].axis('off')
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+```
 
 
 ```{python}
-#|code-fold: true
+#| echo: false
+#| fig-width: 6
+#| fig-height: 3
+
+from modelo_tif_vc import procesar_tif
 import numpy as np
-import pandas as pd
-from pathlib import Path
-from itertools import combinations
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import GroupKFold
-from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
-from IPython.display import display, Markdown
 
-# -------------------------------------------------------------
-# 1 · CONFIGURACIÓN
-DATOS      = Path("datos/datos_sol_sus_acolite.csv")   
-DELTA_AIC  = 4                  
-N_BOOT     = 2000
-RNG_SEED   = 42
+# 1) Cargar el índice de agua con un umbral cualquiera (solo importa el índice)
+archivo = "./recortes_acolite/2025-06-09.tif"
+indice, _, _, _ = procesar_tif(archivo, umbral=0.0)
 
-# -------------------------------------------------------------
-# 2 · FUNCIONES AUXILIARES
-def aic_gauss(rss, n, k):               
-    return n*np.log(rss/n) + 2*k
+# 2) Calcular histograma del índice
+hist, bins = np.histogram(indice.flatten(), bins=100, range=(-1, 1))
 
-def fit_metrics(X, y):
-    m = LinearRegression().fit(X, y)
-    pred = m.predict(X)
-    rss = np.sum((y - pred)**2)
-    n, p = X.shape
-    r2 = r2_score(y, pred)
-    return {
-        "AIC": aic_gauss(rss, n, p+1),
-        "RMSE": np.sqrt(mean_squared_error(y, pred)),
-        "R²": r2,
-        "R²aj": 1 - (1 - r2) * (n - 1) / (n - p - 1),
-        "mod": m
-    }
+# 3) Buscar mínimos locales para sugerir umbral
+minimos = [
+    i for i in range(1, len(hist)-1)
+    if hist[i] < hist[i-1] and hist[i] < hist[i+1]
+]
+if minimos:
+    idx_min = minimos[len(minimos)//2]
+    umbral_sugerido = (bins[idx_min] + bins[idx_min+1]) / 2
+else:
+    umbral_sugerido = 0.0
 
-rmse = lambda a,b: np.sqrt(mean_squared_error(a,b))
+print(f"Umbral sugerido: {umbral_sugerido:.3f}")
 
-# -------------------------------------------------------------
-# 3 · LECTURA Y PRE‑PROCESADO
-df = pd.read_csv(DATOS)
-df["fecha"] = pd.to_datetime(df["fecha"])
-
-bandas = [c for c in df.columns if c.startswith("B")]
-df = df.loc[(df["sol_sus"] > 0) & (df[bandas] > 0).all(axis=1)].copy()
-
-df["log_sol_sus"] = np.log(df["sol_sus"])
-
-# -------------------------------------------------------------
-# 3.1 · log(Bx) y potencias
-log_cols, poly_cols = [], []
-for b in bandas:
-    lb = f"log_{b}"
-    df[lb] = np.log(df[b])
-    df[f"{lb}^2"] = df[lb]**2
-    df[f"{lb}^3"] = df[lb]**3
-    log_cols.append(lb)
-    poly_cols.extend([f"{lb}^2", f"{lb}^3"])
-
-# -------------------------------------------------------------
-# 3.2 · razones generales log(Bi/Bj)
-ratio_cols = []
-for i, b1 in enumerate(bandas):
-    for b2 in bandas[i+1:]:
-        col = f"log({b1}/{b2})"
-        df[col] = df[f"log_{b1}"] - df[f"log_{b2}"]
-        ratio_cols.append(col)
-
-# -------------------------------------------------------------
-# 3.3 · cocientes y índices espectrales
-df["log_NIR_Blue"]  = df["log_B08"] - df["log_B02"]   
-df["log_Red_Green"] = df["log_B04"] - df["log_B03"]   
-cq_cols = ["log_NIR_Blue", "log_Red_Green"]
-
-eps = 1e-10
-df["NDVI"]   = (df["B08"] - df["B04"]) / (df["B08"] + df["B04"] + eps)
-df["TurbI1"] = df["B04"] / (df["B03"] + eps)
-df["RE_NDVI"]= (df["B08"] - df["B06"]) / (df["B08"] + df["B06"] + eps)
-df["NDMI"]   = (df["B08"] - df["B11"]) / (df["B08"] + df["B11"] + eps)
-df["NDWI"]   = (df["B03"] - df["B08"]) / (df["B03"] + df["B08"] + eps)
-idx_cols = ["NDVI", "TurbI1", "RE_NDVI", "NDMI", "NDWI"]
-
-# -------------------------------------------------------------
-# 3.4 · conjunto total de candidatos
-cand_cols = log_cols + poly_cols + ratio_cols + cq_cols + idx_cols
-
-display(Markdown(f"**Total variables candidatas:** {len(cand_cols)}"))
-
-X = df[cand_cols]
-y = df["log_sol_sus"]
-
-# -------------------------------------------------------------
-# 4 · HOLD‑OUT TEMPORAL
-last = df["fecha"].max()
-m_te = df["fecha"] == last
-m_tr = ~m_te
-
-X_tr, y_tr = X.loc[m_tr], y.loc[m_tr]
-X_te, y_te = X.loc[m_te], y.loc[m_te]
-groups_tr  = df.loc[m_tr, "fecha"]
-
-display(Markdown(f"**TRAIN campañas:** {groups_tr.nunique()}"))
-display(Markdown(f"**TEST campaña:** {last.date()}  ({m_te.sum()} muestras)"))
-
-# -------------------------------------------------------------
-# 5 · FORWARD‑AIC (Δ ≥ {DELTA_AIC})
-remaining, selected = cand_cols.copy(), []
-
-rss0 = np.sum((y_tr - y_tr.mean())**2)
-best_aic = aic_gauss(rss0, len(y_tr), 1)
-
-hist, step = [], 0
-while remaining:
-    scores = []
-    for col in remaining:
-        cols = selected + [col]
-        mtr = fit_metrics(X_tr[cols].values, y_tr.values)
-        scores.append((mtr["AIC"], col, mtr))
-    scores.sort()
-    new_aic, best_col, m_info = scores[0]
-
-    if best_aic - new_aic >= DELTA_AIC:
-        selected.append(best_col)
-        remaining.remove(best_col)
-        best_aic = new_aic
-        step += 1
-        hist.append({
-            "Paso": step,
-            "Variables": ", ".join(selected),
-            "AIC": best_aic,
-            "RMSE": m_info["RMSE"],
-            "R²": m_info["R²"],
-            "R²aj": m_info["R²aj"]
-        })
-    else:
-        break
-
-if not selected:
-    best_col = min(scores, key=lambda t: t[0])[1]
-    selected = [best_col]
-    hist.append({
-        "Paso": 1,
-        "Variables": best_col,
-        **{k: v for k, v in scores[0][2].items() if k != "mod"}
-    })
-
-hist_df = pd.DataFrame(hist, columns=["Paso", "Variables", "AIC", "RMSE", "R²", "R²aj"])
-
-display(
-    hist_df.style
-    .format({"AIC": "{:.3f}", "RMSE": "{:.3f}", "R²": "{:.3f}", "R²aj": "{:.3f}"})
-    .set_caption("Historial de selección")
-    .hide(axis="index")
-)
-
-display(Markdown(f"**Variables finales seleccionadas:** `{', '.join(selected)}`"))
-
-# -------------------------------------------------------------
-# 6 · VALIDACIÓN Group‑KFold
-gkf = GroupKFold(n_splits=min(5, groups_tr.nunique()))
-rm = []
-for tr_idx, te_idx in gkf.split(X_tr[selected], y_tr, groups_tr):
-    m = LinearRegression().fit(X_tr.iloc[tr_idx][selected], y_tr.iloc[tr_idx])
-    rm.append(rmse(y_tr.iloc[te_idx], m.predict(X_tr.iloc[te_idx][selected])))
-
-display(Markdown(f"**GroupKFold CV (log) RMSE:** {np.mean(rm):.3f} ± {np.std(rm):.3f}"))
-
-# -------------------------------------------------------------
-# 7 · MODELO FINAL Y MÉTRICAS
-mod = LinearRegression().fit(X_tr[selected], y_tr)
-
-pred_tr = mod.predict(X_tr[selected])
-pred_te = mod.predict(X_te[selected])
-
-metrics_df = pd.DataFrame({
-    "Métrica": ["RMSE", "R²"],
-    "Train log": [rmse(y_tr, pred_tr), r2_score(y_tr, pred_tr)],
-    "Test log": [rmse(y_te, pred_te), r2_score(y_te, pred_te)],
-    "Train orig": [rmse(np.exp(y_tr), np.exp(pred_tr)), r2_score(np.exp(y_tr), np.exp(pred_tr))],
-    "Test orig": [rmse(np.exp(y_te), np.exp(pred_te)), r2_score(np.exp(y_te), np.exp(pred_te))]
-})
-
-display(
-    metrics_df.style
-    .format({
-        "Train log": "{:.3f}", "Test log": "{:.3f}",
-        "Train orig": "{:.3f}", "Test orig": "{:.3f}"
-    })
-    .set_caption("Métricas finales")
-    .hide(axis="index")
-)
-
-# -------------------------------------------------------------
-# 8 · BOOTSTRAP AGRUPADO (IC 95%)
-rng = np.random.default_rng(RNG_SEED)
-dates = groups_tr.unique()
-coef_bs = []
-
-for _ in range(N_BOOT):
-    samp = rng.choice(dates, len(dates), replace=True)
-    idx = groups_tr.isin(samp)
-    m_bs = LinearRegression().fit(X_tr.loc[idx, selected], y_tr.loc[idx])
-    coef_bs.append(m_bs.coef_)
-
-coef_bs = np.array(coef_bs)
-ci_lo, ci_hi = np.percentile(coef_bs, [2.5, 97.5], axis=0)
-
-bs_df = pd.DataFrame({
-    "Variable": selected,
-    "Media β": coef_bs.mean(axis=0),
-    "IC 95% inf.": ci_lo,
-    "IC 95% sup.": ci_hi
-})
-
-display(
-    bs_df.style
-    .format({
-        "Media β": "{:.4f}",
-        "IC 95% inf.": "{:.4f}",
-        "IC 95% sup.": "{:.4f}"
-    })
-    .set_caption("Bootstrap (coeficientes, 95 % CI)")
-    .hide(axis="index")
-)
-
-# -------------------------------------------------------------
-# 9 · ECUACIÓN DEL MODELO
-alpha = np.exp(mod.intercept_)
-expr_log = " + ".join([f"{c:.4f}·{v}" for c, v in zip(mod.coef_, selected)])
-expr_orig = " · ".join([f"{v}^{c:.4f}" for c, v in zip(mod.coef_, selected)])
-
-display(Markdown("Ecuación (log)"))
-display(Markdown(f"`log(sol_sus) = {mod.intercept_:.4f} + {expr_log}`"))
-
-display(Markdown("Ecuación (original)"))
-display(Markdown(f"`sol_sus = {alpha:.4f} · {expr_orig}`"))
-
-# -------------------------------------------------------------
-# 10 · PARIDAD TRAIN + TEST (log y mg/L) con estilo colores y leyenda
-plt.rcParams.update({
-    "axes.titlesize": 10,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7
-})
-
-TRAIN_CLR = "#9D50A6"
-TEST_CLR = "#FFA24B"
-ID_CLR = "#17A77E"
-
-fig, ax = plt.subplots(1, 2, figsize=(9, 4))
-
-# Escala log
-ax[0].scatter(y_tr, pred_tr, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
-ax[0].scatter(y_te, pred_te, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
-lims = [min(y_tr.min(), y_te.min()), max(y_tr.max(), y_te.max())]
-ax[0].plot(lims, lims, "--", color=ID_CLR, lw=2.5, label="y = x")
-ax[0].set(xlabel="log(sol_sus) obs.", ylabel="log(sol_sus) pred.", title="Escala log")
-ax[0].legend(fontsize=7, frameon=False)
-ax[0].grid(ls=":")
-
-# Escala original
-y_tr_lin, y_te_lin = np.exp(y_tr), np.exp(y_te)
-pred_tr_lin, pred_te_lin = np.exp(pred_tr), np.exp(pred_te)
-
-ax[1].scatter(y_tr_lin, pred_tr_lin, alpha=0.6, color=TRAIN_CLR, edgecolor="k", label="Train (●)")
-ax[1].scatter(y_te_lin, pred_te_lin, alpha=0.6, color=TEST_CLR, marker="s", edgecolor="k", label="Test  (■)")
-lims_o = [min(y_tr_lin.min(), y_te_lin.min(), pred_tr_lin.min(), pred_te_lin.min()),
-          max(y_tr_lin.max(), y_te_lin.max(), pred_tr_lin.max(), pred_te_lin.max())]
-ax[1].plot(lims_o, lims_o, "--", color=ID_CLR, lw=2.5)
-ax[1].set(xlabel="sol_sus obs. (mg/L)", ylabel="sol_sus pred. (mg/L)", title="Escala original")
-ax[1].legend(fontsize=7, frameon=False)
-ax[1].grid(ls=":")
-
-fig.suptitle(f"Predicho vs Observado · ΔAIC ≥ {DELTA_AIC}", fontsize=11, y=1.05)
-fig.tight_layout(pad=1.2)
+# 4) Graficar histograma y marcar el umbral
+plt.plot(bins[:-1], hist)
+plt.axvline(umbral_sugerido, color="red", lw=2,
+            label=f"Umbral ≃ {umbral_sugerido:.3f}")
+plt.xlabel("Valor del índice de agua")
+plt.ylabel("Frecuencia")
+plt.title("Histograma del Índice de Agua")
+plt.legend()
+plt.tight_layout()
 plt.show()
 
-plt.rcParams.update({
-    "axes.titlesize": 11,
-    "axes.labelsize": 9,
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8
-})
+```
+
+
+```{python}
+#| echo: false
+#| fig-width: 15
+#| fig-height: 5
+
+from modelo_tif_vc import procesar_tif
+import matplotlib.pyplot as plt
+import numpy as np
+
+archivo = "./recortes_acolite/2025-06-09.tif"
+umbrales = [0.25, 0.33, 0.35, 0.40]  # se puede agregar
+
+for u in umbrales:
+    # Procesar con el umbral actual
+    indice, mascara, parametro, perfil = procesar_tif(archivo, umbral=u)
+
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(f"Resultados para umbral = {u}", fontsize=16)
+
+    # 1) Índice de Agua
+    im0 = axs[0].imshow(indice, cmap='coolwarm', vmin=-1, vmax=1)
+    axs[0].set_title("Índice de Agua")
+    fig.colorbar(im0, ax=axs[0], fraction=0.046, pad=0.04)
+    axs[0].axis('off')
+
+    # 2) Máscara de Agua  
+    # Convertimos 255 → 0 para visualizar sólo binario
+    mask_vis = np.where(mascara == 1, 1, 0)
+    im1 = axs[1].imshow(mask_vis, cmap='gray', vmin=0, vmax=1)
+    axs[1].set_title("Máscara de Agua")
+    fig.colorbar(im1, ax=axs[1], fraction=0.046, pad=0.04)
+    axs[1].axis('off')
+
+    # 3) Sólidos Suspendidos Estimados  
+    # Excluir nodata = -9999.0 antes de calcular el 98º percentil
+    valid = parametro != -9999.0
+    vmax_sol = np.nanpercentile(parametro[valid], 98)
+    im2 = axs[2].imshow(parametro, cmap='inferno', vmin=0, vmax=vmax_sol)
+    axs[2].set_title("Sólidos Suspendidos Estimados")
+    fig.colorbar(im2, ax=axs[2], fraction=0.046, pad=0.04)
+    axs[2].axis('off')
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
 
 ```
+
+
+
+#### Modelo bt
+
+```{python}
+#| echo: false
+#| fig-width: 15
+#| fig-height: 5
+
+from modelo_tif_bt import procesar_tif  
+import matplotlib.pyplot as plt
+import numpy as np
+from IPython.display import display, Math
+
+# Mostrar la ecuación en LaTeX con la nueva fórmula:
+display(Math(
+    r"\mathrm{sol\_sus} = 86.402 \cdot "
+    r"\left(\frac{B05}{B04}\right)^{-0.371} "
+    r"\cdot B02^{-0.091}"
+))
+
+archivo = "./recortes_acolite/2025-06-09.tif"
+umbrales = [0]  # Umbral de ejemplo
+
+for u in umbrales:
+    indice, mascara, parametro, perfil = procesar_tif(archivo, umbral=u)
+
+    cat = f"\n--- Umbral: {u} ---"
+    print(cat)
+    print("Estadísticas del índice de agua:")
+    print(f"  Min: {np.nanmin(indice):.4f}, Max: {np.nanmax(indice):.4f}, "
+          f"Media: {np.nanmean(indice):.4f}")
+
+    print("Estadísticas de la máscara de agua:")
+    print(f"  Valores únicos: {np.unique(mascara)}  (1=agua, 0=tierra, 255=nodata)")
+
+    # Estadísticas de sol_sus (excluyendo nodata = -9999.0)
+    validos = parametro != -9999.0
+    print("Estadísticas del parámetro sólidos suspendidos:")
+    print(f"  Min: {np.nanmin(parametro[validos]):.4f}, "
+          f"Max: {np.nanmax(parametro[validos]):.4f}, "
+          f"Media: {np.nanmean(parametro[validos]):.4f}")
+
+    # Plot
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(f"Resultados para umbral = {u}", fontsize=16)
+
+    # Índice de agua
+    im0 = axs[0].imshow(indice, cmap="coolwarm", vmin=-1, vmax=1)
+    axs[0].set_title("Índice de Agua")
+    fig.colorbar(im0, ax=axs[0], fraction=0.046, pad=0.04)
+    axs[0].axis("off")
+
+    # Máscara de agua
+    mask_vis = np.where(mascara == 1, 1, 0)
+    im1 = axs[1].imshow(mask_vis, cmap="gray", vmin=0, vmax=1)
+    axs[1].set_title("Máscara de Agua")
+    fig.colorbar(im1, ax=axs[1], fraction=0.046, pad=0.04)
+    axs[1].axis("off")
+
+    # Sólidos suspendidos
+    vmax_sol = np.nanpercentile(parametro[validos], 98)
+    im2 = axs[2].imshow(parametro, cmap="inferno", vmin=0, vmax=vmax_sol)
+    axs[2].set_title("Sólidos Suspendidos Estimados")
+    fig.colorbar(im2, ax=axs[2], fraction=0.046, pad=0.04)
+    axs[2].axis("off")
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+```
+
+
+```{python}
+#| echo: false
+#| fig-width: 4
+#| fig-height: 2
+
+from modelo_tif_bt import procesar_tif
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 1) Cargar el índice de agua con un umbral cualquiera (solo importa el índice)
+archivo = "./recortes_acolite/2025-06-09.tif"
+indice, _, _, _ = procesar_tif(archivo, umbral=0.0)
+
+# 2) Calcular histograma del índice
+hist, bins = np.histogram(indice.flatten(), bins=100, range=(-1, 1))
+
+# 3) Buscar mínimos locales para sugerir umbral
+minimos = [
+    i for i in range(1, len(hist)-1)
+    if hist[i] < hist[i-1] and hist[i] < hist[i+1]
+]
+if minimos:
+    idx_min = minimos[len(minimos)//2]
+    umbral_sugerido = (bins[idx_min] + bins[idx_min+1]) / 2
+else:
+    umbral_sugerido = 0.0
+
+print(f"Umbral sugerido: {umbral_sugerido:.3f}")
+
+# 4) Graficar histograma y marcar el umbral
+plt.plot(bins[:-1], hist)
+plt.axvline(umbral_sugerido, color="red", lw=2,
+            label=f"Umbral ≃ {umbral_sugerido:.3f}")
+plt.xlabel("Valor del índice de agua")
+plt.ylabel("Frecuencia")
+plt.title("Histograma del Índice de Agua")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+```
+
+
+```{python}
+#| echo: false
+#| fig-width: 15
+#| fig-height: 5
+
+from modelo_tif_bt import procesar_tif
+import matplotlib.pyplot as plt
+import numpy as np
+
+archivo = "./recortes_acolite/2025-06-09.tif"
+umbrales = [0.25, 0.33, 0.35, 0.40]  # se puede agregar
+
+for u in umbrales:
+    # Procesar con el umbral actual
+    indice, mascara, parametro, perfil = procesar_tif(archivo, umbral=u)
+
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(f"Resultados para umbral = {u}", fontsize=16)
+
+    # 1) Índice de Agua
+    im0 = axs[0].imshow(indice, cmap='coolwarm', vmin=-1, vmax=1)
+    axs[0].set_title("Índice de Agua")
+    fig.colorbar(im0, ax=axs[0], fraction=0.046, pad=0.04)
+    axs[0].axis('off')
+
+    # 2) Máscara de Agua  
+    # Convertimos 255 → 0 para visualizar sólo binario
+    mask_vis = np.where(mascara == 1, 1, 0)
+    im1 = axs[1].imshow(mask_vis, cmap='gray', vmin=0, vmax=1)
+    axs[1].set_title("Máscara de Agua")
+    fig.colorbar(im1, ax=axs[1], fraction=0.046, pad=0.04)
+    axs[1].axis('off')
+
+    # 3) Sólidos Suspendidos Estimados  
+    # Excluir nodata = -9999.0 antes de calcular el 98º percentil
+    valid = parametro != -9999.0
+    vmax_sol = np.nanpercentile(parametro[valid], 98)
+    im2 = axs[2].imshow(parametro, cmap='inferno', vmin=0, vmax=vmax_sol)
+    axs[2].set_title("Sólidos Suspendidos Estimados")
+    fig.colorbar(im2, ax=axs[2], fraction=0.046, pad=0.04)
+    axs[2].axis('off')
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+```
+
+
+
+
+
+
+
+
