@@ -2374,6 +2374,9 @@ plt.rcParams.update({"axes.titlesize":11,"axes.labelsize":9,
 
 ```{python}
 #| echo: false
+
+import sys
+sys.path.append("scripts")
 from modelo_multivariable_completo import ModeloMultivariableCompleto
 import pandas as pd
 
@@ -2400,13 +2403,16 @@ modelo.mostrar_resultados()
 
 ```{python}
 #| echo: false
+
+import sys
+sys.path.append("scripts")
 from modelo_multivariable_boot import ModeloMultivariableCompleto
 import pandas as pd
 
 # 1) Cargar datos
 datos = pd.read_csv("datos/datos_sol_sus_acolite.csv")
 
-# 2) Inicializar el modelo con los datos (aquí n_boot=300)
+# 2) Inicializar el modelo con los datos (aquí n_boot=200)
 modelo = ModeloMultivariableCompleto(datos, max_features=3, n_boot=200)
 
 # 3) Selección hacia adelante usando bootstrap y AIC
@@ -2423,18 +2429,54 @@ modelo.mostrar_resultados()
 
 ### Procesamiento de datos geográficos
 
-#### Modelo gkf
+```{python}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 6
 
+import sys
+import matplotlib.pyplot as plt
+
+# Agregar carpeta "scripts" al path de Python
+sys.path.append("scripts")
+
+# Importar la función desde rgb_utils.py
+from rgb_utils import make_rgb
+
+# Ruta al archivo .tif
+ruta_tif = "./recortes_acolite/2025-06-09.tif"
+
+# Generar la imagen RGB y la info
+rgb, info = make_rgb(ruta_tif)
+
+# Mostrar info en consola / notebook
+print("Bandas elegidas:", info['sel'])
+
+# Mostrar imagen en el reporte
+plt.imshow(rgb)
+plt.axis("off")
+plt.show()
+```
+
+
+
+#### Modelo gkf
 
 ```{python}
 #| echo: false
 #| fig-width: 15
 #| fig-height: 5
 
-from modelo_tif_gkf import procesar_tif  
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from IPython.display import display, Math
+
+# Agregar la carpeta scripts al path para poder importar el módulo
+sys.path.append("scripts")
+
+# Importar la función desde modelo_tif_gkf.py
+from modelo_tif_gkf import procesar_tif  
 
 # Mostrar la ecuación en LaTeX
 display(Math(r"\text{sol\_sus} = 61.7089 \cdot \left(\frac{B02}{B07}\right)^{-0.8370} \cdot \left(B8A^3\right)^{-0.0044}"))
@@ -2490,9 +2532,12 @@ for u in umbrales:
 #| fig-width: 4.5
 #| fig-height: 2.0
 
-from modelo_tif_gkf import procesar_tif
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
+
+sys.path.append("scripts")
+from modelo_tif_gkf import procesar_tif
 
 # 1) Cargar índice
 archivo = "./recortes_acolite/2025-06-09.tif"
@@ -2546,6 +2591,8 @@ plt.show()
 #| fig-width: 15
 #| fig-height: 5
 
+import sys
+sys.path.append("scripts")
 from modelo_tif_gkf import procesar_tif
 import matplotlib.pyplot as plt
 import numpy as np
@@ -2597,6 +2644,8 @@ for u in umbrales:
 #| fig-width: 15
 #| fig-height: 5
 
+import sys
+sys.path.append("scripts")
 from modelo_tif_vc import procesar_tif  
 import matplotlib.pyplot as plt
 import numpy as np
@@ -2656,6 +2705,8 @@ for u in umbrales:
 #| fig-width: 15
 #| fig-height: 5
 
+import sys
+sys.path.append("scripts")
 from modelo_tif_vc import procesar_tif
 import matplotlib.pyplot as plt
 import numpy as np
@@ -2695,7 +2746,6 @@ for u in umbrales:
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
 ```
 
 
@@ -2707,6 +2757,8 @@ for u in umbrales:
 #| fig-width: 15
 #| fig-height: 5
 
+import sys
+sys.path.append("scripts")
 from modelo_tif_bt import procesar_tif  
 import matplotlib.pyplot as plt
 import numpy as np
@@ -2775,6 +2827,8 @@ for u in umbrales:
 #| fig-width: 15
 #| fig-height: 5
 
+import sys
+sys.path.append("scripts")
 from modelo_tif_bt import procesar_tif
 import matplotlib.pyplot as plt
 import numpy as np
@@ -2814,7 +2868,6 @@ for u in umbrales:
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
 ```
 
 
